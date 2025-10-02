@@ -35,9 +35,6 @@
                         <a href="#" class="view-tab active" data-view="board">
                             <span>📋</span> Board by Status
                         </a>
-                        <a href="#" class="view-tab" data-view="gallery">
-                            <span>🎨</span> Gallery
-                        </a>
                         <a href="#" class="view-tab" data-view="tasks">
                             <span>✓</span> My tasks
                         </a>
@@ -155,22 +152,6 @@
                 </div>
             </div>
         </div>
-        <!-- Gallery View -->
-        <div id="gallery-view" class="gallery-view">
-            <div class="gallery-controls">
-                <button class="gallery-btn">Edit filters</button>
-                <button class="gallery-btn">+ New page</button>
-            </div>
-            <div class="gallery-grid">
-                <div class="gallery-card add-new">
-                    <div>
-                        <div style="font-size: 2rem; margin-bottom: 0.5rem; display: grid; place-items: center;">+</div>
-                        <div>New page</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- My Tasks View -->
         <div id="tasks-view" class="tasks-view">
             <div class="tasks-controls">
