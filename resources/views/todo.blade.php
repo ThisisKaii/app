@@ -183,15 +183,12 @@
 
                 document.getElementById('table-view').style.display = 'none';
                 document.getElementById('board-view').style.display = 'none';
-                document.getElementById('gallery-view').classList.remove('active');
                 document.getElementById('tasks-view').classList.remove('active');
 
                 if (viewName === 'table') {
                     document.getElementById('table-view').style.display = 'block';
                 } else if (viewName === 'board') {
                     document.getElementById('board-view').style.display = 'flex';
-                } else if (viewName === 'gallery') {
-                    document.getElementById('gallery-view').classList.add('active');
                 } else if (viewName === 'tasks') {
                     document.getElementById('tasks-view').classList.add('active');
                 }
@@ -248,17 +245,22 @@
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
 
-            if (e.target.classList.contains('kanban-column')) {
-                e.target.style.backgroundColor = 'rgba(88, 166, 255, 0.05)';
-            } else if (e.target.classList.contains('cards-container')) {
-                e.target.style.backgroundColor = 'rgba(88, 166, 255, 0.1)';
+            // Highlight both column and cards-container
+            if (e.currentTarget.classList.contains('kanban-column')) {
+                e.currentTarget.style.backgroundColor = 'rgba(88, 166, 255, 0.05)';
+            } else if (e.currentTarget.classList.contains('cards-container')) {
+                e.currentTarget.style.backgroundColor = 'rgba(88, 166, 255, 0.1)';
             }
 
             return false;
         }
 
         function handleDragLeave(e) {
-            this.style.backgroundColor = '';
+            // Clear background for both column and container
+            if (e.currentTarget.classList.contains('kanban-column') ||
+                e.currentTarget.classList.contains('cards-container')) {
+                e.currentTarget.style.backgroundColor = '';
+            }
         }
 
         function handleDrop(e) {
@@ -277,12 +279,18 @@
             e.preventDefault();
             e.stopPropagation();
 
-            if (draggedCard && e.target.classList.contains('kanban-column')) {
-                const cardsContainer = e.target.querySelector('.cards-container');
+            if (draggedCard && e.currentTarget.classList.contains('kanban-column')) {
+                // Find the cards-container inside this column
+                const cardsContainer = e.currentTarget.querySelector('.cards-container');
+
                 if (cardsContainer) {
+                    const newStatus = cardsContainer.dataset.status;
+                    const taskId = draggedCard.dataset.taskId;
+
+                    // Move card visually
                     cardsContainer.appendChild(draggedCard);
+                    e.currentTarget.style.backgroundColor = '';
                 }
-                e.target.style.backgroundColor = '';
             }
 
             return false;
