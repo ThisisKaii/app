@@ -438,3 +438,11 @@ body {
         .button:hover{
             background-color: #242424;
         }
+
+        .title{
+            color: #c9d1d9;
+            font-weight: 600;
+            font-size: 1.5rem;
+            margin-top: .5rem;
+            margin-left: 1rem;
+        }
