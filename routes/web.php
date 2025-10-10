@@ -19,14 +19,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::get('/todo', function () {
-    return view('todo');
-});
-
-Route::middleware('auth')->group(function () {
-    Route::get('/boards/{board}', [BoardController::class, 'show'])->name('boards.show');
-    Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
-    Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
-}); 
+Route::get('/todo/{board}', [BoardController::class, 'show'])->name('boards.show');
+Route::post('/todo', [TaskController::class, 'store'])->name('tasks.store');
+Route::patch('/todo/{task}', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
 
 require __DIR__.'/auth.php';
