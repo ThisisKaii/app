@@ -128,7 +128,7 @@
                             <div class="task-card-meta">Priority: High</div>
                         </div>
                     </div>
-                    <button class="add-card progress" onclick="addCardToColumn('progress')">
+                    <button class="add-card inprogress" onclick="addCardToColumn('progress')">
                         <span>+</span>
                         New page
                     </button>

@@ -175,8 +175,8 @@ body {
         }
         
         .add-card:hover {
-            border-color: #58a6ff;
-            color: #58a6ff;
+            border-color: #c9d1d9;
+            color: #c9d1d9;
         }
         
         .add-card.review:hover {
@@ -184,7 +184,7 @@ body {
             color: #a371f7;
         }
         
-        .add-card.progress:hover {
+        .add-card.inprogress:hover {
             border-color: #58a6ff;
             color: #58a6ff;
         }
