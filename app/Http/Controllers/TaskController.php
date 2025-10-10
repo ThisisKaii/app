@@ -31,11 +31,23 @@ class TaskController extends Controller
 
     public function updateStatus(Request $request, Task $task)
     {
+        if (auth()->check()) {
+            // Authenticated user can only update their own tasks
+            if ($task->user_id !== auth()->id()) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
+        } else {
+            // Guest can only update their session tasks
+            if ($task->session_id !== session('guest_session_id')) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
+        }
         $validated = $request->validate([
             'status' => 'required|in:to_do,in_review,in_progress,published'
         ]);
 
-        $task->update(['status' => $validated['status']]);
+        $task->status = $validated['status'];
+        $task->save();
 
         return response()->json(['success' => true]);
     }
