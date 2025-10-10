@@ -1,16 +1,36 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\Board;
 
 class BoardController extends Controller
 {
-    public function show(Board $board){
-        $tasks = $board->tasks()
-        ->with(['assignee', 'tags'])
-        ->orderBy('order')
-        ->get();
+    public function show(Board $board)
+    {
 
-        return view('boards.show', compact('board', 'tasks'));
+        if (auth()->check()) {
+            $tasks = $board->tasks()
+                ->where('user_id', auth()->id())
+                ->with(['assignee', 'tags'])
+                ->orderBy('order')
+                ->get();
+
+            $taskLimit = null;
+            $remainingTasks = null;
+        } else {
+            // Guest users
+            $guestSessionId = session('guest_session_id');
+
+            $tasks = $board->tasks()
+                ->where('session_id', $guestSessionId)
+                ->with(['assignee', 'tags'])
+                ->orderBy('order')
+                ->get();
+
+            $taskLimit = 5;
+        }
+
+        return view('todo', compact('board', 'tasks', 'taskLimit'));
     }
 }
