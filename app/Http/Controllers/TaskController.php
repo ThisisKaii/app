@@ -24,31 +24,49 @@ class TaskController extends Controller
 
         $validated['user_id'] = auth()->id();
 
-        Task::create($validated);
+        // Get the max order for this status
+        $maxOrder = Task::where('board_id', $validated['board_id'])
+            ->where('status', $validated['status'])
+            ->where('user_id', auth()->id())
+            ->max('order') ?? -1;
 
+        $validated['order'] = $maxOrder + 1;
+
+        Task::create($validated);
         return redirect()->back()->with('success', 'Task created successfully!');
     }
 
     public function updateStatus(Request $request, Task $task)
     {
-        if (auth()->check()) {
-            // Authenticated user can only update their own tasks
-            if ($task->user_id !== auth()->id()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
-            }
-        } else {
-            // Guest can only update their session tasks
-            if ($task->session_id !== session('guest_session_id')) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
-            }
-        }
+
         $validated = $request->validate([
-            'status' => 'required|in:to_do,in_review,in_progress,published'
+            'status' => 'required|in:to_do,in_review,in_progress,published',
+            'new_order' => 'nullable|integer|min:0'
         ]);
 
-        $task->status = $validated['status'];
-        $task->save();
+        try {
+            // Simple update first - just status and order
+            $task->status = $validated['status'];
+            $task->order = $validated['new_order'] ?? 0;
+            $task->save();
 
-        return response()->json(['success' => true]);
+            \Log::info('Task updated successfully', [
+                'task_id' => $task->id,
+                'status' => $task->status,
+                'order' => $task->order
+            ]);
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            \Log::error('Update failed', [
+                'error' => $e->getMessage(),
+                'task_id' => $task->id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

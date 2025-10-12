@@ -33,13 +33,6 @@
     </nav>
 
     <main class="container-fluid">
-        <div style="background: red; color: white; padding: 10px;">
-            <strong>DEBUG:</strong>
-            Board ID: {{ $board->id }} |
-            Board Title: {{ $board->title }} |
-            Tasks Count: {{ $tasks->count() }} |
-            Auth User: {{ auth()->id() }}
-        </div>
         <div class="main-header">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
@@ -84,6 +77,18 @@
                         <th>🏷️ Tags</th>
                         <th>🔗 URL</th>
                     </tr>
+                    @foreach($tasks as $task)
+                    <tr class = "data-row">
+                        <td> {{$task->title}}</td>
+                        <td> {{str_replace('_', ' ', $task->status)}}</td>
+                        <td> {{$task->type}}</td>
+                        <td> {{$task->priority}}</td>
+                        <td> {{$task->assignee ? $task->assignee->name : 'Unassigned'}}</td>
+                        <td> {{$task->due_date ? $task->due_date->format('M d, Y') : 'No due date'}}</td>
+                        <td> Dev: To be made</td>
+                        <td> {{$task->url ? $task->url : 'No URL'}}</td>
+                    </tr>
+                    @endforeach
                 </thead>
                 <tbody>
                     <tr class="new-row">
@@ -271,7 +276,6 @@
 
         function initDragAndDrop() {
             const cards = document.querySelectorAll('.task-card');
-            const containers = document.querySelectorAll('.kanban-column');
             const columns = document.querySelectorAll('.kanban-column');
 
             cards.forEach(card => {
@@ -279,14 +283,9 @@
                 card.addEventListener('dragend', handleDragEnd);
             });
 
-            containers.forEach(container => {
-                container.addEventListener('dragover', handleDragOver);
-                container.addEventListener('drop', handleDrop);
-                container.addEventListener('dragleave', handleDragLeave);
-            });
-
             columns.forEach(column => {
                 column.addEventListener('dragover', handleDragOver);
+                column.addEventListener('drop', handleDrop);
                 column.addEventListener('dragleave', handleDragLeave);
             });
         }
@@ -299,9 +298,6 @@
 
         function handleDragEnd(e) {
             this.classList.remove('dragging');
-            document.querySelectorAll('.cards-container').forEach(c => {
-                c.style.backgroundColor = '';
-            });
             document.querySelectorAll('.kanban-column').forEach(c => {
                 c.style.backgroundColor = '';
             });
@@ -319,6 +315,12 @@
         }
 
         function handleDragLeave(e) {
+            if (e.currentTarget.classList.contains('kanban-column')) {
+                e.currentTarget.style.backgroundColor = '';
+            }
+        }
+
+        function handleDragLeave(e) {
             this.style.backgroundColor = '';
         }
 
@@ -329,21 +331,30 @@
 
             if (!draggedCard) return false;
 
-            const cardsContainer = this.querySelector('.cards-container');
+            const column = e.currentTarget;
+            const cardsContainer = column.querySelector('.cards-container');
+
             if (!cardsContainer) {
                 alert('Error: cards container not found.');
                 return false;
             }
 
+            const afterElement = getDragAfterElement(cardsContainer, e.clientY);
             const addButton = cardsContainer.querySelector('.add-card');
-            if (addButton) {
-                cardsContainer.insertBefore(draggedCard, addButton);
+
+            // Insert the card at the right position
+            if (afterElement == null) {
+                // Drop at the end (before add button)
+                if (addButton) {
+                    cardsContainer.insertBefore(draggedCard, addButton);
+                } else {
+                    cardsContainer.appendChild(draggedCard);
+                }
             } else {
-                cardsContainer.appendChild(draggedCard);
+                cardsContainer.insertBefore(draggedCard, afterElement);
             }
 
-            cardsContainer.style.backgroundColor = '';
-            this.style.backgroundColor = '';
+            column.style.backgroundColor = '';
 
             const newStatus = cardsContainer.dataset.status;
             const taskId = draggedCard.dataset.taskId;
@@ -352,6 +363,12 @@
                 alert('Error: Task ID not found.');
                 return false;
             }
+
+            // Calculate new order based on position
+            const allCards = Array.from(cardsContainer.querySelectorAll('.task-card'));
+            const newOrder = allCards.indexOf(draggedCard);
+
+            console.log('Task ID:', taskId, 'New Status:', newStatus, 'New Order:', newOrder);
 
             const updateUrlBase = "{{ url('/todo') }}";
             const url = `${updateUrlBase}/${taskId}`;
@@ -364,20 +381,27 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        status: newStatus
+                        status: newStatus,
+                        new_order: newOrder
                     })
                 })
                 .then(response => {
+                    console.log('Response status:', response.status);
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     return response.json();
                 })
                 .then(data => {
-                    if (!data.success) {
+                    console.log('Success:', data);
+                    if (data.success) {
+                        // Reload page to show correct order from database
+                        location.reload();
+                    } else {
                         alert('Update failed!');
                         location.reload();
                     }
                 })
                 .catch(error => {
+                    console.error('Error:', error);
                     alert('Network error: ' + error.message);
                     location.reload();
                 });
@@ -391,7 +415,7 @@
 
             return draggableElements.reduce((closest, child) => {
                 const box = child.getBoundingClientRect();
-                const offset = y - box.top - box.height / 2; // how far cursor is from the middle of the card
+                const offset = y - box.top - box.height / 2;
 
                 if (offset < 0 && offset > closest.offset) {
                     return {
@@ -403,7 +427,7 @@
                 }
             }, {
                 offset: Number.NEGATIVE_INFINITY
-            }).element || null;
+            }).element;
         }
 
 
