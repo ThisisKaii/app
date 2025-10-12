@@ -244,11 +244,25 @@ body {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            background-color: #0d1117;
             border-radius: 8px;
             overflow: hidden;
         }
         
+        .data-table thead .data-row td{
+            padding: 1rem;
+            font-weight: 600;
+            font-size: 1rem;
+            text-transform: capitalize;
+            transition: background-color 0.5s ease;
+            
+            background-color: #161b22;
+        }
+
+        .data-table thead .data-row:hover td{
+            background-color: #090b0f77;
+        }
+
+
         .data-table thead th {
             background-color: #161b22;
             color: #8b949e;
@@ -262,11 +276,12 @@ body {
         
         .data-table tbody tr {
             border-bottom: 1px solid #21262d;
-            transition: background-color 0.2s;
+            transition: background-color 0.5s;
+            background-color: #0d1117;
         }
         
         .data-table tbody tr:hover {
-            background-color: #161b22;
+            background-color: rgb(2, 2, 2);
         }
         
         .data-table tbody td {
@@ -450,4 +465,3 @@ body {
         .logouts{
             background: transparent;
         }
-        
