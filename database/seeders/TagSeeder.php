@@ -31,7 +31,6 @@ class TagSeeder extends Seeder
             'color' => '#3B82F6', // Blue
         ]);
 
-        // Attach tags to some tasks (if tasks exist)
         $tasks = Task::all();
         
         if ($tasks->count() > 0) {

@@ -19,8 +19,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+# Task and Board Routes - Final Proj
 Route::get('/todo/{board}', [BoardController::class, 'show'])->name('boards.show');
 Route::post('/todo', [TaskController::class, 'store'])->name('tasks.store');
 Route::patch('/todo/{task}', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
+#
 
-require __DIR__.'/auth.php';
+Route::get('/test', function () {
+    return view('/test');
+});
+require __DIR__ . '/auth.php';

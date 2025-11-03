@@ -5,9 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    @vite(['resources/css/todo.css'])
+    @vite(['resources/css/todo.css', 'resources/css/app.css', 'resources/js/app.js'])
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Todobido</title>
+    @livewireStyles
 </head>
 
 <body>
@@ -31,7 +32,21 @@
             </div>
         </div>
     </nav>
+    @if(session('success'))
+    <div id="toast-success" style="position: fixed; top: 20px; right: 20px; z-index: 9999; background: #10b981; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 0.75rem; animation: slideIn 0.3s ease;">
+        <span style="font-size: 1.5rem;">✓</span>
+        <span>{{ session('success') }}</span>
+        <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; font-size: 1.25rem; cursor: pointer; padding: 0; margin-left: 0.5rem; line-height: 1;">&times;</button>
+    </div>
+    @endif
 
+    @if(session('error'))
+    <div id="toast-error" style="position: fixed; top: 20px; right: 20px; z-index: 9999; background: #ef4444; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 0.75rem; animation: slideIn 0.3s ease;">
+        <span style="font-size: 1.5rem;">✕</span>
+        <span>{{ session('error') }}</span>
+        <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; font-size: 1.25rem; cursor: pointer; padding: 0; margin-left: 0.5rem; line-height: 1;">&times;</button>
+    </div>
+    @endif
     <main class="container-fluid">
         <div class="main-header">
             <div class="d-flex justify-content-between align-items-start">
@@ -78,7 +93,7 @@
                         <th>🔗 URL</th>
                     </tr>
                     @foreach($tasks as $task)
-                    <tr class = "data-row">
+                    <tr class="data-row">
                         <td> {{$task->title}}</td>
                         <td> {{str_replace('_', ' ', $task->status)}}</td>
                         <td> {{$task->type}}</td>
@@ -99,7 +114,6 @@
                 </tbody>
             </table>
         </div>
-
         <!-- Board View -->
         <div class="container">
             <div id="board-view" class="kanban-container" style="display: flex;">
@@ -110,26 +124,10 @@
                         To do
                     </div>
                     <div class="cards-container" data-status="to_do">
-                        @foreach($tasks->where('status', 'to_do') as $task)
-                        <div class="task-card" draggable="true" data-task-id="{{ $task->id }}">
-                            <div class="task-card-title">{{ $task->title }}</div>
-                            <div class="task-card-meta">
-                                @if($task->priority)
-                                <span class="priority-badge priority-{{ $task->priority }}">{{ ucfirst($task->priority) }}</span>
-                                @endif
-                                @if($task->due_date)
-                                <span>📅 {{ $task->due_date->format('M d') }}</span>
-                                @endif
-                                @if($task->assignee)
-                                <span>👤 {{ $task->assignee->name }}</span>
-                                @endif
-                            </div>
-                        </div>
-                        @endforeach
+                        @livewire('edit-modal', [ 'board' => $board, 'status' => 'to_do'])
 
-                        <button class="add-card" onclick="addCardToColumn('to_do')">
-                            <span>+</span> New page
-                        </button>
+                        @livewire('add-modal', ['boardId' => $board->id, 'status' => 'to_do'])
+
                     </div>
                 </div> <!-- CLOSE TODO COLUMN -->
 
@@ -140,26 +138,9 @@
                         In review
                     </div>
                     <div class="cards-container" data-status="in_review">
-                        @foreach($tasks->where('status', 'in_review') as $task)
-                        <div class="task-card" draggable="true" data-task-id="{{ $task->id }}">
-                            <div class="task-card-title">{{ $task->title }}</div>
-                            <div class="task-card-meta">
-                                @if($task->priority)
-                                <span class="priority-badge priority-{{ $task->priority }}">{{ ucfirst($task->priority) }}</span>
-                                @endif
-                                @if($task->due_date)
-                                <span>📅 {{ $task->due_date->format('M d') }}</span>
-                                @endif
-                                @if($task->assignee)
-                                <span>👤 {{ $task->assignee->name }}</span>
-                                @endif
-                            </div>
-                        </div>
-                        @endforeach
+                        @livewire('edit-modal', [ 'board' => $board, 'status' => 'in_review'])
 
-                        <button class="add-card review" onclick="addCardToColumn('in_review')">
-                            <span>+</span> New page
-                        </button>
+                        @livewire('add-modal', ['boardId' => $board->id, 'status' => 'in_review'])
                     </div>
                 </div> <!-- CLOSE IN REVIEW COLUMN -->
 
@@ -170,26 +151,9 @@
                         In progress
                     </div>
                     <div class="cards-container" data-status="in_progress">
-                        @foreach($tasks->where('status', 'in_progress') as $task)
-                        <div class="task-card" draggable="true" data-task-id="{{ $task->id }}">
-                            <div class="task-card-title">{{ $task->title }}</div>
-                            <div class="task-card-meta">
-                                @if($task->priority)
-                                <span class="priority-badge priority-{{ $task->priority }}">{{ ucfirst($task->priority) }}</span>
-                                @endif
-                                @if($task->due_date)
-                                <span>📅 {{ $task->due_date->format('M d') }}</span>
-                                @endif
-                                @if($task->assignee)
-                                <span>👤 {{ $task->assignee->name }}</span>
-                                @endif
-                            </div>
-                        </div>
-                        @endforeach
+                        @livewire('edit-modal', [ 'board' => $board, 'status' => 'in_progress'])
 
-                        <button class="add-card inprogress" onclick="addCardToColumn('in_progress')">
-                            <span>+</span> New page
-                        </button>
+                        @livewire('add-modal', ['boardId' => $board->id, 'status' => 'in_progress'])
                     </div>
                 </div> <!-- CLOSE IN PROGRESS COLUMN -->
 
@@ -200,26 +164,10 @@
                         Published
                     </div>
                     <div class="cards-container" data-status="published">
-                        @foreach($tasks->where('status', 'published') as $task)
-                        <div class="task-card" draggable="true" data-task-id="{{ $task->id }}">
-                            <div class="task-card-title">{{ $task->title }}</div>
-                            <div class="task-card-meta">
-                                @if($task->priority)
-                                <span class="priority-badge priority-{{ $task->priority }}">{{ ucfirst($task->priority) }}</span>
-                                @endif
-                                @if($task->due_date)
-                                <span>📅 {{ $task->due_date->format('M d') }}</span>
-                                @endif
-                                @if($task->assignee)
-                                <span>👤 {{ $task->assignee->name }}</span>
-                                @endif
-                            </div>
-                        </div>
-                        @endforeach
+                        @livewire('edit-modal', [ 'board' => $board, 'status' => 'published'])
 
-                        <button class="add-card published" onclick="addCardToColumn('published')">
-                            <span>+</span> New page
-                        </button>
+                        @livewire('add-modal', ['boardId' => $board->id, 'status' => 'published'])
+
                     </div>
                 </div> <!-- CLOSE PUBLISHED COLUMN -->
             </div> <!-- CLOSE KANBAN CONTAINER -->
@@ -430,44 +378,9 @@
             }).element;
         }
 
-
-        function addCardToColumn(status) {
-            const title = prompt('Enter card title:');
-            if (title) {
-                const container = document.querySelector(`.cards-container[data-status="${status}"]`);
-                const card = document.createElement('div');
-                card.className = 'task-card';
-                card.draggable = true;
-                card.innerHTML = `
-                    <div class="task-card-title">${title}</div>
-                    <div class="task-card-meta">Priority: Medium</div>
-                `;
-
-                card.addEventListener('dragstart', handleDragStart);
-                card.addEventListener('dragend', handleDragEnd);
-
-                container.appendChild(card);
-            }
-        }
-
-        function addNewCard() {
-            const title = prompt('Enter card title:');
-            if (title) {
-                const container = document.querySelector('.cards-container[data-status="to_do"]');
-                const card = document.createElement('div');
-                card.className = 'task-card';
-                card.draggable = true;
-                card.innerHTML = `
-                    <div class="task-card-title">${title}</div>
-                    <div class="task-card-meta">Priority: Medium</div>
-                `;
-
-                card.addEventListener('dragstart', handleDragStart);
-                card.addEventListener('dragend', handleDragEnd);
-
-                container.appendChild(card);
-            }
-        }
+        Livewire.on('task-created', () => {
+            location.reload(); // Manual reload
+        });
     </script>
 </body>
 
