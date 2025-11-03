@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Task;
-use App\Models\Tag;
 
 class TaskController extends Controller
 {
@@ -45,7 +44,6 @@ class TaskController extends Controller
         ]);
 
         try {
-            // Simple update first - just status and order
             $task->status = $validated['status'];
             $task->order = $validated['new_order'] ?? 0;
             $task->save();

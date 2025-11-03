@@ -14,7 +14,6 @@ class TaskSeeder extends Seeder
         $board = Board::first();
         $user = User::first();
 
-        // Add this check!
         if (!$board) {
             $this->command->error('No board found! Run BoardSeeder first.');
             return;

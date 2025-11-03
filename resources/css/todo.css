@@ -70,9 +70,9 @@ body {
         
         .kanban-container {
             display: flex;
+            justify-content: center;
             gap: 1rem;
             padding: 2rem 0;
-            overflow-x: auto;
             align-items: flex-start;
         }
         
@@ -129,7 +129,7 @@ body {
             border-radius: 6px;
             padding: 0.75rem;
             margin-bottom: 0.5rem;
-            cursor: move;
+            cursor: pointer;
             transition: all 0.2s;
         }
         
@@ -177,21 +177,6 @@ body {
         .add-card:hover {
             border-color: #c9d1d9;
             color: #c9d1d9;
-        }
-        
-        .add-card.review:hover {
-            border-color: #a371f7;
-            color: #a371f7;
-        }
-        
-        .add-card.inprogress:hover {
-            border-color: #58a6ff;
-            color: #58a6ff;
-        }
-        
-        .add-card.published:hover {
-            border-color: #3fb950;
-            color: #3fb950;
         }
         
         .new-btn {
@@ -465,3 +450,5 @@ body {
         .logouts{
             background: transparent;
         }
+
+        
