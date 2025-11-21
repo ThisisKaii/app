@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     @vite(['resources/css/todo.css', 'resources/css/app.css', 'resources/js/app.js'])
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Todobido</title>
@@ -17,35 +18,42 @@
             <p class="title"><b>Todobido</b></p>
             <div class="ms-auto">
                 @guest
-                <a class="button text-decoration-none me-3" href="{{ route('login') }}" style="color: #c9d1d9; padding: 0.375rem 1.25rem;">Log in</a>
-                <a class="button text-decoration-none me-3" href="{{ route('register') }}" style="color: #c9d1d9; padding: 0.375rem 1.25rem; border: 1px solid #3E3E3A; border-radius: 0.25rem;">Register</a>
+                    <a class="button text-decoration-none me-3" href="{{ route('login') }}"
+                        style="color: #c9d1d9; padding: 0.375rem 1.25rem;">Log in</a>
+                    <a class="button text-decoration-none me-3" href="{{ route('register') }}"
+                        style="color: #c9d1d9; padding: 0.375rem 1.25rem; border: 1px solid #3E3E3A; border-radius: 0.25rem;">Register</a>
                 @endguest
 
                 @auth
-                <form method="POST" action="{{ route('logout') }}" style="display: inline;">
-                    @csrf
-                    <button type="submit" class="button text-decoration-none logouts" style="color: #c9d1d9; padding: 0.375rem 1.25rem; border: 1px solid #3E3E3A; border-radius: 0.25rem; cursor: pointer;">
-                        Logout
-                    </button>
-                </form>
+                    <form method="POST" action="{{ route('logout') }}" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="button text-decoration-none logouts"
+                            style="color: #c9d1d9; padding: 0.375rem 1.25rem; border: 1px solid #3E3E3A; border-radius: 0.25rem; cursor: pointer;">
+                            Logout
+                        </button>
+                    </form>
                 @endauth
             </div>
         </div>
     </nav>
     @if(session('success'))
-    <div id="toast-success" style="position: fixed; top: 20px; right: 20px; z-index: 9999; background: #10b981; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 0.75rem; animation: slideIn 0.3s ease;">
-        <span style="font-size: 1.5rem;">✓</span>
-        <span>{{ session('success') }}</span>
-        <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; font-size: 1.25rem; cursor: pointer; padding: 0; margin-left: 0.5rem; line-height: 1;">&times;</button>
-    </div>
+        <div id="toast-success"
+            style="position: fixed; top: 20px; right: 20px; z-index: 9999; background: #10b981; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 0.75rem; animation: slideIn 0.3s ease;">
+            <span style="font-size: 1.5rem;">✓</span>
+            <span>{{ session('success') }}</span>
+            <button onclick="this.parentElement.remove()"
+                style="background: none; border: none; color: white; font-size: 1.25rem; cursor: pointer; padding: 0; margin-left: 0.5rem; line-height: 1;">&times;</button>
+        </div>
     @endif
 
     @if(session('error'))
-    <div id="toast-error" style="position: fixed; top: 20px; right: 20px; z-index: 9999; background: #ef4444; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 0.75rem; animation: slideIn 0.3s ease;">
-        <span style="font-size: 1.5rem;">✕</span>
-        <span>{{ session('error') }}</span>
-        <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; font-size: 1.25rem; cursor: pointer; padding: 0; margin-left: 0.5rem; line-height: 1;">&times;</button>
-    </div>
+        <div id="toast-error"
+            style="position: fixed; top: 20px; right: 20px; z-index: 9999; background: #ef4444; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 0.75rem; animation: slideIn 0.3s ease;">
+            <span style="font-size: 1.5rem;">✕</span>
+            <span>{{ session('error') }}</span>
+            <button onclick="this.parentElement.remove()"
+                style="background: none; border: none; color: white; font-size: 1.25rem; cursor: pointer; padding: 0; margin-left: 0.5rem; line-height: 1;">&times;</button>
+        </div>
     @endif
     <main class="container-fluid">
         <div class="main-header">
@@ -67,14 +75,6 @@
                         </a>
                     </div>
                 </div>
-                <div class="toolbar">
-                    <button class="toolbar-btn">☰</button>
-                    <button class="toolbar-btn">↕</button>
-                    <button class="toolbar-btn">⚡</button>
-                    <button class="toolbar-btn">🔍</button>
-                    <button class="toolbar-btn">⋯</button>
-                    <button class="new-btn" onclick="addNewCard()">New ▼</button>
-                </div>
             </div>
         </div>
 
@@ -93,16 +93,16 @@
                         <th>🔗 URL</th>
                     </tr>
                     @foreach($tasks as $task)
-                    <tr class="data-row">
-                        <td> {{$task->title}}</td>
-                        <td> {{str_replace('_', ' ', $task->status)}}</td>
-                        <td> {{$task->type}}</td>
-                        <td> {{$task->priority}}</td>
-                        <td> {{$task->assignee ? $task->assignee->name : 'Unassigned'}}</td>
-                        <td> {{$task->due_date ? $task->due_date->format('M d, Y') : 'No due date'}}</td>
-                        <td> Dev: To be made</td>
-                        <td> {{$task->url ? $task->url : 'No URL'}}</td>
-                    </tr>
+                        <tr class="data-row">
+                            <td> {{$task->title}}</td>
+                            <td> {{str_replace('_', ' ', $task->status)}}</td>
+                            <td> {{$task->type}}</td>
+                            <td> {{$task->priority}}</td>
+                            <td> {{$task->assignee ? $task->assignee->name : 'Unassigned'}}</td>
+                            <td> {{$task->due_date ? $task->due_date->format('M d, Y') : 'No due date'}}</td>
+                            <td> Dev: To be made</td>
+                            <td> {{$task->url ? $task->url : 'No URL'}}</td>
+                        </tr>
                     @endforeach
                 </thead>
                 <tbody>
@@ -124,7 +124,7 @@
                         To do
                     </div>
                     <div class="cards-container" data-status="to_do">
-                        @livewire('edit-modal', [ 'board' => $board, 'status' => 'to_do'])
+                        @livewire('edit-modal', ['board' => $board, 'status' => 'to_do'])
 
                         @livewire('add-modal', ['boardId' => $board->id, 'status' => 'to_do'])
 
@@ -138,7 +138,7 @@
                         In review
                     </div>
                     <div class="cards-container" data-status="in_review">
-                        @livewire('edit-modal', [ 'board' => $board, 'status' => 'in_review'])
+                        @livewire('edit-modal', ['board' => $board, 'status' => 'in_review'])
 
                         @livewire('add-modal', ['boardId' => $board->id, 'status' => 'in_review'])
                     </div>
@@ -151,7 +151,7 @@
                         In progress
                     </div>
                     <div class="cards-container" data-status="in_progress">
-                        @livewire('edit-modal', [ 'board' => $board, 'status' => 'in_progress'])
+                        @livewire('edit-modal', ['board' => $board, 'status' => 'in_progress'])
 
                         @livewire('add-modal', ['boardId' => $board->id, 'status' => 'in_progress'])
                     </div>
@@ -164,7 +164,7 @@
                         Published
                     </div>
                     <div class="cards-container" data-status="published">
-                        @livewire('edit-modal', [ 'board' => $board, 'status' => 'published'])
+                        @livewire('edit-modal', ['board' => $board, 'status' => 'published'])
 
                         @livewire('add-modal', ['boardId' => $board->id, 'status' => 'published'])
 
@@ -190,7 +190,9 @@
         </div>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
     <script>
         // View switching functionality
         document.querySelectorAll('.view-tab').forEach(tab => {
@@ -322,17 +324,17 @@
             const url = `${updateUrlBase}/${taskId}`;
 
             fetch(url, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        status: newStatus,
-                        new_order: newOrder
-                    })
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    status: newStatus,
+                    new_order: newOrder
                 })
+            })
                 .then(response => {
                     console.log('Response status:', response.status);
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);

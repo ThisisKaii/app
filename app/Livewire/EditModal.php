@@ -3,13 +3,12 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use App\Models\Board;
 use App\Models\Task;
 
 class EditModal extends Component
 {
     public $board;
-    public $tasks;
+    public $tasks = [];
     public $tasksId;
     public $title;
     public $type;
@@ -20,6 +19,7 @@ class EditModal extends Component
 
     public $status;
     public $isOpen = false;
+    public $confirmDelete = false;
 
     protected $listeners = ['openEditModal' => 'openModal'];
     public function mount($board, $status)
@@ -31,7 +31,7 @@ class EditModal extends Component
 
     public function openModal($taskId)
     {
-        $this->taskId = $taskId;
+        $this->tasksId = $taskId;
 
         // Load task data
         $task = Task::find($taskId);
@@ -65,41 +65,55 @@ class EditModal extends Component
             'url' => 'nullable|url|max:500',
         ]);
 
-        $task = Task::find($this->taskId);
-        
-        if ($task) {
-            $task->update([
-                'title' => $this->title,
-                'type' => $this->type ?: null,
-                'priority' => $this->priority ?: null,
-                'due_date' => $this->due_date ?: null,
-                'description' => $this->description ?: null,
-                'url' => $this->url ?: null,
-            ]);
-        }
-
+        $task = Task::find($this->tasksId);
+        $task->update([
+            'title' => $this->title,
+            'type' => $this->type ?: null,
+            'priority' => $this->priority ?: null,
+            'due_date' => $this->due_date ?: null,
+            'description' => $this->description ?: null,
+            'url' => $this->url ?: null,
+        ]);
+        $this->tasks = Task::where('board_id', $this->board->id)->get();
         $this->closeModal();
-        
+
         session()->flash('success', 'Task updated successfully!');
-        
-        // Dispatch event to reload page or refresh board
+
         $this->dispatch('task-updated');
+
+        return $this->redirect(route('boards.show', $this->boardId));
     }
-    
+    public function askDelete()
+    {
+        $this->confirmDelete = true;
+    }
+
+    public function cancelDelete()
+    {
+        $this->confirmDelete = false;
+    }
+
+
     public function delete()
     {
-        $task = Task::find($this->taskId);
-        
+        $task = Task::find($this->tasksId);
+
         if ($task) {
             $task->delete();
         }
 
+        $this->tasks = Task::where('board_id', $this->board->id)->get();
+        $this->cancelDelete();
+
         $this->closeModal();
-        
+
         session()->flash('success', 'Task deleted successfully!');
-        
+
         $this->dispatch('task-deleted');
+
+        return $this->redirect(route('boards.show', $this->boardId));
     }
+
 
     public function render()
     {
