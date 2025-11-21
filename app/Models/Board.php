@@ -24,4 +24,9 @@ class Board extends Model
             ->withPivot('role')
             ->withTimestamps();
     }
+
+    public function budgets()
+    {
+        return $this->hasOne(Budgets::class);
+    }
 }
