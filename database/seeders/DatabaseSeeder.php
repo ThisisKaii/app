@@ -26,6 +26,9 @@ class DatabaseSeeder extends Seeder
             BoardSeeder::class,
             TaskSeeder::class,
             TagSeeder::class,
+            BudgetsSeeder::class,
+            budgetTaskSeeder::class,
+            expensesSeeder::class,
         ]);
     }
 }
