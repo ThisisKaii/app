@@ -111,7 +111,7 @@ class EditModal extends Component
 
         $this->dispatch('task-deleted');
 
-        return $this->redirect(route('boards.show', $this->boardId));
+        return $this->redirect(route('boards.show', $this->board->id));
     }
 
 

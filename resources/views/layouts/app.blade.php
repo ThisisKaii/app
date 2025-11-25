@@ -13,13 +13,14 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     <!-- Scripts -->
-    @vite(['resources/css/profile.css', 'resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/todo.css','resources/css/profile.css', 'resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="font-sans antialiased">
+<body>
+    @include('layouts.navigation')
     <div class="min-h-screen bg-gray-900 text-gray-100 font-sans antialiased">
 
-        @include('layouts.navigation')
+        
 
         <!-- Page Heading -->
         @isset($header)

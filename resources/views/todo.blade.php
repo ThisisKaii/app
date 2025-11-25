@@ -13,29 +13,7 @@
 </head>
 
 <body>
-    <nav class="navbar">
-        <div class="container-fluid">
-            <p class="title"><b>Todobido</b></p>
-            <div class="ms-auto">
-                @guest
-                    <a class="button text-decoration-none me-3" href="{{ route('login') }}"
-                        style="color: #c9d1d9; padding: 0.375rem 1.25rem;">Log in</a>
-                    <a class="button text-decoration-none me-3" href="{{ route('register') }}"
-                        style="color: #c9d1d9; padding: 0.375rem 1.25rem; border: 1px solid #3E3E3A; border-radius: 0.25rem;">Register</a>
-                @endguest
-
-                @auth
-                    <form method="POST" action="{{ route('logout') }}" style="display: inline;">
-                        @csrf
-                        <button type="submit" class="button text-decoration-none logouts"
-                            style="color: #c9d1d9; padding: 0.375rem 1.25rem; border: 1px solid #3E3E3A; border-radius: 0.25rem; cursor: pointer;">
-                            Logout
-                        </button>
-                    </form>
-                @endauth
-            </div>
-        </div>
-    </nav>
+    @include('layouts.navigation')
     @if(session('success'))
         <div id="toast-success"
             style="position: fixed; top: 20px; right: 20px; z-index: 9999; background: #10b981; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 0.75rem; animation: slideIn 0.3s ease;">
@@ -64,13 +42,13 @@
                         {{ $board->title }}
                     </div>
                     <div class="view-tabs">
-                        <a href="#" class="view-tab" data-view="table">
+                        <a class="view-tab" data-view="table">
                             <span>📊</span> Table
                         </a>
-                        <a href="#" class="view-tab active" data-view="board">
+                        <a class="view-tab active" data-view="board">
                             <span>📋</span> Board by Status
                         </a>
-                        <a href="#" class="view-tab" data-view="tasks">
+                        <a class="view-tab" data-view="tasks">
                             <span>✓</span> My tasks
                         </a>
                     </div>
@@ -189,179 +167,206 @@
             </div>
         </div>
     </main>
-    )
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
-    @push('scripts')
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                console.log("Init Drag & Drop Triggered");
+    <script>
 
-                initDragAndDrop();
-            });
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.view-tab');
+            const views = {
+                table: document.getElementById('table-view'),
+                board: document.getElementById('board-view'),
+                tasks: document.getElementById('tasks-view')
+            };
 
-            // Reinitialize drag system every time Livewire updates the DOM
-            document.addEventListener('livewire:update', () => {
-                console.log("Init Drag & Drop Triggered 1");
+            tabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    e.preventDefault();
 
-                initDragAndDrop();
-            });
+                    // Remove active from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
 
-            // Also run on initial Livewire load
-            document.addEventListener('livewire:load', () => {
-                console.log("Init Drag & Drop Triggered 2");
+                    // Add active to clicked tab
+                    tab.classList.add('active');
 
-                initDragAndDrop();
-            });
+                    // Hide all views
+                    Object.values(views).forEach(v => v.style.display = 'none');
 
-
-            let draggedCard = null;
-
-            function initDragAndDrop() {
-                const cards = document.querySelectorAll('.task-card');
-                const columns = document.querySelectorAll('.kanban-column');
-
-                // detach old listeners by cloning nodes
-                cards.forEach(card => {
-                    card.addEventListener('dragstart', handleDragStart);
-                    card.addEventListener('dragend', handleDragEnd);
-                });
-
-                columns.forEach(column => {
-                    column.addEventListener('dragover', handleDragOver);
-                    column.addEventListener('drop', handleDrop);
-                    column.addEventListener('dragleave', handleDragLeave);
-                });
-            }
-
-            function handleDragStart(e) {
-                draggedCard = this;
-                this.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-            }
-
-            function handleDragEnd(e) {
-                this.classList.remove('dragging');
-                document.querySelectorAll('.kanban-column').forEach(c => {
-                    c.style.backgroundColor = '';
-                });
-            }
-
-            function handleDragOver(e) {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-
-                if (e.currentTarget.classList.contains('kanban-column')) {
-                    e.currentTarget.style.backgroundColor = 'rgba(88, 166, 255, 0.05)';
-                }
-            }
-
-            function handleDragLeave(e) {
-                this.style.backgroundColor = '';
-            }
-
-            function handleDrop(e) {
-
-                e.preventDefault();
-                e.stopPropagation();
-
-                if (!draggedCard) return false;
-
-                const column = e.currentTarget;
-                const cardsContainer = column.querySelector('.cards-container');
-
-                if (!cardsContainer) {
-                    alert('Error: cards container not found.');
-                    return false;
-                }
-
-                const afterElement = getDragAfterElement(cardsContainer, e.clientY);
-                const addButton = cardsContainer.querySelector('.add-card');
-
-                if (afterElement == null) {
-                    if (addButton) {
-                        cardsContainer.insertBefore(draggedCard, addButton);
-                    } else {
-                        cardsContainer.appendChild(draggedCard);
+                    // Show the selected view
+                    const viewToShow = views[tab.dataset.view];
+                    if (viewToShow) {
+                        viewToShow.style.display = tab.dataset.view === 'board' ? 'flex' : 'block';
                     }
-                } else {
-                    cardsContainer.insertBefore(draggedCard, afterElement);
-                }
+                });
+            });
+        });
 
-                column.style.backgroundColor = '';
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("Init Drag & Drop Triggered");
 
-                const newStatus = cardsContainer.dataset.status;
-                const taskId = draggedCard.dataset.taskId;
-                
-                draggedCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+            initDragAndDrop();
+        });
 
-                if (!taskId) {
-                    alert('Error: Task ID not found.');
-                    return false;
-                }
+        // Reinitialize drag system every time Livewire updates the DOM
+        document.addEventListener('livewire:update', () => {
+            console.log("Init Drag & Drop Triggered 1");
 
-                const allCards = Array.from(cardsContainer.querySelectorAll('.task-card'));
-                const newOrder = allCards.indexOf(draggedCard);
+            initDragAndDrop();
+        });
 
-                const updateUrlBase = "{{ url('/todo') }}";
-                const url = `${updateUrlBase}/${taskId}`;
+        // Also run on initial Livewire load
+        document.addEventListener('livewire:load', () => {
+            console.log("Init Drag & Drop Triggered 2");
 
-                fetch(url, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        status: newStatus,
-                        new_order: newOrder
-                    })
-                })
-                    .then(response => {
-                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.success) {
-                            location.reload();
-                        } else {
-                            alert('Update failed!');
-                            location.reload();
-                        }
-                    })
-                    .catch(error => {
-                        alert('Network error: ' + error.message);
-                        location.reload();
-                    });
+            initDragAndDrop();
+        });
 
+
+        let draggedCard = null;
+
+        function initDragAndDrop() {
+            const cards = document.querySelectorAll('.task-card');
+            const columns = document.querySelectorAll('.kanban-column');
+
+            // detach old listeners by cloning nodes
+            cards.forEach(card => {
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragend', handleDragEnd);
+            });
+
+            columns.forEach(column => {
+                column.addEventListener('dragover', handleDragOver);
+                column.addEventListener('drop', handleDrop);
+                column.addEventListener('dragleave', handleDragLeave);
+            });
+        }
+
+        function handleDragStart(e) {
+            draggedCard = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.kanban-column').forEach(c => {
+                c.style.backgroundColor = '';
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            if (e.currentTarget.classList.contains('kanban-column')) {
+                e.currentTarget.style.backgroundColor = 'rgba(88, 166, 255, 0.05)';
+            }
+        }
+
+        function handleDragLeave(e) {
+            this.style.backgroundColor = '';
+        }
+
+        function handleDrop(e) {
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (!draggedCard) return false;
+
+            const column = e.currentTarget;
+            const cardsContainer = column.querySelector('.cards-container');
+
+            if (!cardsContainer) {
+                alert('Error: cards container not found.');
                 return false;
             }
 
-            function getDragAfterElement(container, y) {
-                const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
+            const afterElement = getDragAfterElement(cardsContainer, e.clientY);
+            const addButton = cardsContainer.querySelector('.add-card');
 
-                return draggableElements.reduce((closest, child) => {
-                    const box = child.getBoundingClientRect();
-                    const offset = y - box.top - box.height / 2;
-
-                    if (offset < 0 && offset > closest.offset) {
-                        return { offset: offset, element: child };
-                    } else {
-                        return closest;
-                    }
-                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            if (afterElement == null) {
+                if (addButton) {
+                    cardsContainer.insertBefore(draggedCard, addButton);
+                } else {
+                    cardsContainer.appendChild(draggedCard);
+                }
+            } else {
+                cardsContainer.insertBefore(draggedCard, afterElement);
             }
 
-            Livewire.on('task-created', () => {
-                location.reload();
-            });
-        </script>
-    @endpush
-    @livewireScripts
+            column.style.backgroundColor = '';
 
-    @stack('scripts')
+            const newStatus = cardsContainer.dataset.status;
+            const taskId = draggedCard.dataset.taskId;
+
+            draggedCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+
+            if (!taskId) {
+                alert('Error: Task ID not found.');
+                return false;
+            }
+
+            const allCards = Array.from(cardsContainer.querySelectorAll('.task-card'));
+            const newOrder = allCards.indexOf(draggedCard);
+
+            const updateUrlBase = "{{ url('/todo') }}";
+            const url = `${updateUrlBase}/${taskId}`;
+
+            fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    status: newStatus,
+                    new_order: newOrder
+                })
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Update failed!');
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    alert('Network error: ' + error.message);
+                    location.reload();
+                });
+
+            return false;
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        Livewire.on('task-created', () => {
+            location.reload();
+        });
+    </script>
+    @livewireScripts
 </body>
 
 </html>
