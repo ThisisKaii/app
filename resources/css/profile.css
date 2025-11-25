@@ -1,0 +1,198 @@
+/* Form Labels */
+.profile-label {
+    display: block;
+    color: #c9d1d9;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Form Inputs */
+.profile-input {
+    background-color: #161b22; /* dark background */
+    border: 2px solid #30363d; /* subtle border */
+    color: #c9d1d9; /* text color */
+    border-radius: 0.5rem; /* rounded corners */
+    padding: 0.75rem 1rem; /* spacing inside */
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.profile-input::placeholder {
+    color: #6e7681; /* placeholder color */
+}
+
+.profile-input:focus {
+    outline: none;
+    border-color: #58a6ff; /* focus border */
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1); /* focus glow */
+}
+
+.profile-input:hover {
+    border-color: #484f58; /* hover border */
+}
+
+/* Input Error Messages */
+.profile-error {
+    color: #f85149;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+/* Primary Button */
+.profile-button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #238636;
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: 0.5rem;
+    padding: 0.875rem 1rem;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.profile-button:hover {
+    background-color: #2ea043;
+}
+
+.profile-button:active {
+    background-color: #26a641;
+}
+
+.profile-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(35, 134, 54, 0.3);
+}
+
+/* Secondary Button */
+.profile-button-secondary {
+    background-color: transparent;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    font-weight: 500;
+    transition: all 0.2s;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+}
+
+.profile-button-secondary:hover {
+    background-color: #21262d;
+    border-color: #8b949e;
+}
+
+/* Card wrapper */
+.profile-card {
+    background-color: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+    color: #c9d1d9;
+}
+
+/* Form Labels */
+.profile-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #c9d1d9;
+}
+
+/* Form Inputs */
+.profile-input {
+    display: block;
+    width: 100%;
+    background-color: #161b22;
+    border: 2px solid #30363d;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: #c9d1d9;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s;
+}
+
+.profile-input::placeholder {
+    color: #6e7681;
+}
+
+.profile-input:focus {
+    outline: none;
+    border-color: #58a6ff;
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+}
+
+.profile-input:hover {
+    border-color: #484f58;
+}
+
+/* Buttons */
+.profile-button {
+    background-color: #238636;
+    color: #fff;
+    font-weight: 700;
+    border-radius: 0.5rem;
+    padding: 0.875rem 1rem;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.profile-button:hover {
+    background-color: #2ea043;
+}
+
+.profile-button-secondary {
+    background-color: transparent;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    font-weight: 500;
+    padding: 0.875rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+.profile-button-secondary:hover {
+    background-color: #21262d;
+    border-color: #8b949e;
+}
+
+/* Error & Success Messages */
+.profile-error {
+    color: #f85149;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.profile-success {
+    color: #3fb950;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Headers & Section Titles */
+.profile-header {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #f0f6fc;
+    margin-bottom: 0.75rem;
+}
+
+.profile-subtitle {
+    font-size: 0.875rem;
+    color: #8b949e;
+    margin-bottom: 1rem;
+}
+
+/* Flex & Spacing */
+.profile-form-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
