@@ -27,9 +27,7 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
         $request->session()->regenerate();
 
-        $board = Board::where('user_id', auth()->id())->first();
-
-        return redirect()->route('boards.show', $board);
+        return redirect()->route('dashboard');
     }
 
     /**
