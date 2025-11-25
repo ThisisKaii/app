@@ -189,201 +189,179 @@
             </div>
         </div>
     </main>
-
+    )
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
-    <script>
-        // View switching functionality
-        document.querySelectorAll('.view-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                e.preventDefault();
-                const viewName = tab.dataset.view;
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log("Init Drag & Drop Triggered");
 
-                document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-
-                document.getElementById('table-view').style.display = 'none';
-                document.getElementById('board-view').style.display = 'none';
-                document.getElementById('tasks-view').classList.remove('active');
-
-                if (viewName === 'table') {
-                    document.getElementById('table-view').style.display = 'block';
-                } else if (viewName === 'board') {
-                    document.getElementById('board-view').style.display = 'flex';
-                } else if (viewName === 'tasks') {
-                    document.getElementById('tasks-view').classList.add('active');
-                }
-            });
-        });
-
-        // Drag and Drop functionality
-        let draggedCard = null;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initDragAndDrop();
-        });
-
-        function initDragAndDrop() {
-            const cards = document.querySelectorAll('.task-card');
-            const columns = document.querySelectorAll('.kanban-column');
-
-            cards.forEach(card => {
-                card.addEventListener('dragstart', handleDragStart);
-                card.addEventListener('dragend', handleDragEnd);
+                initDragAndDrop();
             });
 
-            columns.forEach(column => {
-                column.addEventListener('dragover', handleDragOver);
-                column.addEventListener('drop', handleDrop);
-                column.addEventListener('dragleave', handleDragLeave);
+            // Reinitialize drag system every time Livewire updates the DOM
+            document.addEventListener('livewire:update', () => {
+                console.log("Init Drag & Drop Triggered 1");
+
+                initDragAndDrop();
             });
-        }
 
-        function handleDragStart(e) {
-            draggedCard = this;
-            this.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-        }
+            // Also run on initial Livewire load
+            document.addEventListener('livewire:load', () => {
+                console.log("Init Drag & Drop Triggered 2");
 
-        function handleDragEnd(e) {
-            this.classList.remove('dragging');
-            document.querySelectorAll('.kanban-column').forEach(c => {
-                c.style.backgroundColor = '';
+                initDragAndDrop();
             });
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-
-            if (e.currentTarget.classList.contains('kanban-column')) {
-                e.currentTarget.style.backgroundColor = 'rgba(88, 166, 255, 0.05)';
-            }
-
-            return false;
-        }
-
-        function handleDragLeave(e) {
-            if (e.currentTarget.classList.contains('kanban-column')) {
-                e.currentTarget.style.backgroundColor = '';
-            }
-        }
-
-        function handleDragLeave(e) {
-            this.style.backgroundColor = '';
-        }
 
 
-        function handleDrop(e) {
-            e.preventDefault();
-            e.stopPropagation();
+            let draggedCard = null;
 
-            if (!draggedCard) return false;
+            function initDragAndDrop() {
+                const cards = document.querySelectorAll('.task-card');
+                const columns = document.querySelectorAll('.kanban-column');
 
-            const column = e.currentTarget;
-            const cardsContainer = column.querySelector('.cards-container');
-
-            if (!cardsContainer) {
-                alert('Error: cards container not found.');
-                return false;
-            }
-
-            const afterElement = getDragAfterElement(cardsContainer, e.clientY);
-            const addButton = cardsContainer.querySelector('.add-card');
-
-            // Insert the card at the right position
-            if (afterElement == null) {
-                // Drop at the end (before add button)
-                if (addButton) {
-                    cardsContainer.insertBefore(draggedCard, addButton);
-                } else {
-                    cardsContainer.appendChild(draggedCard);
-                }
-            } else {
-                cardsContainer.insertBefore(draggedCard, afterElement);
-            }
-
-            column.style.backgroundColor = '';
-
-            const newStatus = cardsContainer.dataset.status;
-            const taskId = draggedCard.dataset.taskId;
-
-            if (!taskId) {
-                alert('Error: Task ID not found.');
-                return false;
-            }
-
-            // Calculate new order based on position
-            const allCards = Array.from(cardsContainer.querySelectorAll('.task-card'));
-            const newOrder = allCards.indexOf(draggedCard);
-
-            console.log('Task ID:', taskId, 'New Status:', newStatus, 'New Order:', newOrder);
-
-            const updateUrlBase = "{{ url('/todo') }}";
-            const url = `${updateUrlBase}/${taskId}`;
-
-            fetch(url, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    status: newStatus,
-                    new_order: newOrder
-                })
-            })
-                .then(response => {
-                    console.log('Response status:', response.status);
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Success:', data);
-                    if (data.success) {
-                        // Reload page to show correct order from database
-                        location.reload();
-                    } else {
-                        alert('Update failed!');
-                        location.reload();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Network error: ' + error.message);
-                    location.reload();
+                // detach old listeners by cloning nodes
+                cards.forEach(card => {
+                    card.addEventListener('dragstart', handleDragStart);
+                    card.addEventListener('dragend', handleDragEnd);
                 });
 
-            return false;
-        }
+                columns.forEach(column => {
+                    column.addEventListener('dragover', handleDragOver);
+                    column.addEventListener('drop', handleDrop);
+                    column.addEventListener('dragleave', handleDragLeave);
+                });
+            }
 
-        // Helper function to find the card after the mouse position
-        function getDragAfterElement(container, y) {
-            const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
+            function handleDragStart(e) {
+                draggedCard = this;
+                this.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            }
 
-            return draggableElements.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = y - box.top - box.height / 2;
+            function handleDragEnd(e) {
+                this.classList.remove('dragging');
+                document.querySelectorAll('.kanban-column').forEach(c => {
+                    c.style.backgroundColor = '';
+                });
+            }
 
-                if (offset < 0 && offset > closest.offset) {
-                    return {
-                        offset: offset,
-                        element: child
-                    };
-                } else {
-                    return closest;
+            function handleDragOver(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+
+                if (e.currentTarget.classList.contains('kanban-column')) {
+                    e.currentTarget.style.backgroundColor = 'rgba(88, 166, 255, 0.05)';
                 }
-            }, {
-                offset: Number.NEGATIVE_INFINITY
-            }).element;
-        }
+            }
 
-        Livewire.on('task-created', () => {
-            location.reload(); // Manual reload
-        });
-    </script>
+            function handleDragLeave(e) {
+                this.style.backgroundColor = '';
+            }
+
+            function handleDrop(e) {
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (!draggedCard) return false;
+
+                const column = e.currentTarget;
+                const cardsContainer = column.querySelector('.cards-container');
+
+                if (!cardsContainer) {
+                    alert('Error: cards container not found.');
+                    return false;
+                }
+
+                const afterElement = getDragAfterElement(cardsContainer, e.clientY);
+                const addButton = cardsContainer.querySelector('.add-card');
+
+                if (afterElement == null) {
+                    if (addButton) {
+                        cardsContainer.insertBefore(draggedCard, addButton);
+                    } else {
+                        cardsContainer.appendChild(draggedCard);
+                    }
+                } else {
+                    cardsContainer.insertBefore(draggedCard, afterElement);
+                }
+
+                column.style.backgroundColor = '';
+
+                const newStatus = cardsContainer.dataset.status;
+                const taskId = draggedCard.dataset.taskId;
+                
+                draggedCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+
+                if (!taskId) {
+                    alert('Error: Task ID not found.');
+                    return false;
+                }
+
+                const allCards = Array.from(cardsContainer.querySelectorAll('.task-card'));
+                const newOrder = allCards.indexOf(draggedCard);
+
+                const updateUrlBase = "{{ url('/todo') }}";
+                const url = `${updateUrlBase}/${taskId}`;
+
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: newStatus,
+                        new_order: newOrder
+                    })
+                })
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Update failed!');
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        alert('Network error: ' + error.message);
+                        location.reload();
+                    });
+
+                return false;
+            }
+
+            function getDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
+
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+
+            Livewire.on('task-created', () => {
+                location.reload();
+            });
+        </script>
+    @endpush
+    @livewireScripts
+
+    @stack('scripts')
 </body>
 
 </html>
