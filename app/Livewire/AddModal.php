@@ -54,12 +54,12 @@ class AddModal extends Component
             'board_id' => $this->boardId,
             'user_id' => auth()->id(),
             'title' => $this->title,
-            'status' => $this->status,
+            'status' => $this->status,  
             'type' => $this->type ?: null,
             'priority' => $this->priority ?: null,
             'due_date' => $this->due_date ?: null,
             'description' => $this->description ?: null,
-            'url' => $this->url,
+            'url' => $this->url ?: null,
             'order' => $maxOrder + 1,
 
         ]);

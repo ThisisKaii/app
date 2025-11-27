@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('title', 100);
-            $table->enum('view_type', ['table', 'board', 'gallery', 'list'])->default('board');
             $table->integer('order')->default(0);
             $table->timestamps();
         });
