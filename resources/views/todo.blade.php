@@ -4,8 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     @vite(['resources/css/todo.css', 'resources/css/app.css', 'resources/js/app.js'])
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Todobido</title>
@@ -38,15 +36,14 @@
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <div class="project-title">
-                        <div class="project-icon"></div>
                         {{ $board->title }}
                     </div>
                     <div class="view-tabs">
-                        <a class="view-tab" data-view="table">
-                            <span>📊</span> Table
-                        </a>
                         <a class="view-tab active" data-view="board">
                             <span>📋</span> Board by Status
+                        </a>
+                        <a class="view-tab" data-view="table">
+                            <span>📊</span> Table
                         </a>
                         <a class="view-tab" data-view="tasks">
                             <span>✓</span> My tasks
@@ -171,8 +168,10 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
-    <script>
 
+    @livewireScripts
+
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
             const tabs = document.querySelectorAll('.view-tab');
             const views = {
@@ -184,17 +183,9 @@
             tabs.forEach(tab => {
                 tab.addEventListener('click', (e) => {
                     e.preventDefault();
-
-                    // Remove active from all tabs
                     tabs.forEach(t => t.classList.remove('active'));
-
-                    // Add active to clicked tab
                     tab.classList.add('active');
-
-                    // Hide all views
                     Object.values(views).forEach(v => v.style.display = 'none');
-
-                    // Show the selected view
                     const viewToShow = views[tab.dataset.view];
                     if (viewToShow) {
                         viewToShow.style.display = tab.dataset.view === 'board' ? 'flex' : 'block';
@@ -203,34 +194,33 @@
             });
         });
 
+        let draggedTaskId = null;
+        let draggedElement = null;
+
+        // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("Init Drag & Drop Triggered");
-
+            console.log("Initial Drag & Drop Setup");
             initDragAndDrop();
         });
 
-        // Reinitialize drag system every time Livewire updates the DOM
-        document.addEventListener('livewire:update', () => {
-            console.log("Init Drag & Drop Triggered 1");
-
+        // Wait for Livewire to be available before setting up hooks
+        document.addEventListener('livewire:initialized', () => {
+            console.log("Livewire Initialized - Setting up Drag & Drop");
             initDragAndDrop();
+
+            // Set up the morph hook
+            Livewire.hook('morph.updated', ({ el, component }) => {
+                console.log("Livewire Component Updated - Reinitializing Drag & Drop");
+                initDragAndDrop();
+            });
         });
-
-        // Also run on initial Livewire load
-        document.addEventListener('livewire:load', () => {
-            console.log("Init Drag & Drop Triggered 2");
-
-            initDragAndDrop();
-        });
-
-
-        let draggedCard = null;
 
         function initDragAndDrop() {
             const cards = document.querySelectorAll('.task-card');
             const columns = document.querySelectorAll('.kanban-column');
 
-            // detach old listeners by cloning nodes
+            console.log(`Found ${cards.length} cards and ${columns.length} columns`);
+
             cards.forEach(card => {
                 card.addEventListener('dragstart', handleDragStart);
                 card.addEventListener('dragend', handleDragEnd);
@@ -244,13 +234,17 @@
         }
 
         function handleDragStart(e) {
-            draggedCard = this;
+            draggedTaskId = this.dataset.taskId;
+            draggedElement = this;
             this.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('taskId', draggedTaskId);
         }
 
         function handleDragEnd(e) {
-            this.classList.remove('dragging');
+            if (draggedElement) {
+                draggedElement.classList.remove('dragging');
+            }
             document.querySelectorAll('.kanban-column').forEach(c => {
                 c.style.backgroundColor = '';
             });
@@ -270,50 +264,46 @@
         }
 
         function handleDrop(e) {
-
             e.preventDefault();
             e.stopPropagation();
 
-            if (!draggedCard) return false;
+            if (!draggedTaskId) {
+                console.error('No task ID found');
+                return false;
+            }
 
             const column = e.currentTarget;
             const cardsContainer = column.querySelector('.cards-container');
 
             if (!cardsContainer) {
-                alert('Error: cards container not found.');
+                console.error('Error: cards container not found.');
                 return false;
-            }
-
-            const afterElement = getDragAfterElement(cardsContainer, e.clientY);
-            const addButton = cardsContainer.querySelector('.add-card');
-
-            if (afterElement == null) {
-                if (addButton) {
-                    cardsContainer.insertBefore(draggedCard, addButton);
-                } else {
-                    cardsContainer.appendChild(draggedCard);
-                }
-            } else {
-                cardsContainer.insertBefore(draggedCard, afterElement);
             }
 
             column.style.backgroundColor = '';
 
             const newStatus = cardsContainer.dataset.status;
-            const taskId = draggedCard.dataset.taskId;
-
-            draggedCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+            const taskId = draggedTaskId;
 
             if (!taskId) {
-                alert('Error: Task ID not found.');
+                console.error('Error: Task ID not found.');
                 return false;
             }
 
+            const afterElement = getDragAfterElement(cardsContainer, e.clientY);
             const allCards = Array.from(cardsContainer.querySelectorAll('.task-card'));
-            const newOrder = allCards.indexOf(draggedCard);
+            let newOrder = 0;
+
+            if (afterElement) {
+                newOrder = allCards.indexOf(afterElement);
+            } else {
+                newOrder = allCards.length;
+            }
 
             const updateUrlBase = "{{ url('/todo') }}";
             const url = `${updateUrlBase}/${taskId}`;
+
+            console.log('Updating task:', taskId, 'to status:', newStatus, 'order:', newOrder);
 
             fetch(url, {
                 method: 'PATCH',
@@ -333,16 +323,20 @@
                 })
                 .then(data => {
                     if (data.success) {
+                        console.log('Task updated successfully - reloading page');
                         location.reload();
                     } else {
-                        alert('Update failed!');
+                        console.error('Update failed!');
                         location.reload();
                     }
                 })
                 .catch(error => {
-                    alert('Network error: ' + error.message);
+                    console.error('Network error:', error);
                     location.reload();
                 });
+
+            draggedTaskId = null;
+            draggedElement = null;
 
             return false;
         }
@@ -361,12 +355,7 @@
                 }
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
-
-        Livewire.on('task-created', () => {
-            location.reload();
-        });
     </script>
-    @livewireScripts
 </body>
 
 </html>

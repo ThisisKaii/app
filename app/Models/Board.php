@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Board extends Model
 {
-    protected $fillable = ['user_id', 'title', 'view_type', 'order'];
+    protected $fillable = ['user_id', 'title', 'list_type'];
 
     public function user()
     {
