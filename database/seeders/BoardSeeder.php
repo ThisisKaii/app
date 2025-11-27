@@ -19,23 +19,17 @@ class BoardSeeder extends Seeder
         // Create sample boards
         Board::create([
             'user_id' => $user->id,
-            'title' => 'Website Project',
-            'view_type' => 'board',
-            'order' => 1,
+            'title' => 'Website Project'
         ]);
 
         Board::create([
             'user_id' => $user->id,
-            'title' => 'Bug Tracker',
-            'view_type' => 'table',
-            'order' => 2,
+            'title' => 'Bug Tracker'
         ]);
 
         Board::create([
             'user_id' => $user->id,
-            'title' => 'Marketing Tasks',
-            'view_type' => 'board',
-            'order' => 3,
+            'title' => 'Marketing Tasks'
         ]);
     }
     }

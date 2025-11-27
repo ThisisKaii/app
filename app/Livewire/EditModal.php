@@ -8,6 +8,7 @@ use App\Models\Task;
 class EditModal extends Component
 {
     public $board;
+    public $boardId;
     public $tasks = [];
     public $tasksId;
     public $title;
@@ -21,10 +22,14 @@ class EditModal extends Component
     public $isOpen = false;
     public $confirmDelete = false;
 
-    protected $listeners = ['openEditModal' => 'openModal'];
+    protected $listeners = [
+        'openEditModal' => 'openModal',
+        'taskUpdated' => 'refreshTasks'
+    ];
     public function mount($board, $status)
     {
         $this->board = $board;
+        $this->boardId = $board->id;
         $this->tasks = Task::where('board_id', $board->id)->get();
         $this->status = $status;
     }
@@ -53,7 +58,11 @@ class EditModal extends Component
         $this->isOpen = false;
         $this->reset(['title', 'type', 'priority', 'due_date', 'description', 'url']);
     }
-
+    
+    public function refreshTasks()
+    {
+        $this->tasks = Task::where('board_id', $this->board->id)->get();
+    }
     public function save()
     {
         $this->validate([
@@ -74,14 +83,30 @@ class EditModal extends Component
             'description' => $this->description ?: null,
             'url' => $this->url ?: null,
         ]);
+        $this->board->touch();
         $this->tasks = Task::where('board_id', $this->board->id)->get();
         $this->closeModal();
 
         session()->flash('success', 'Task updated successfully!');
+    }
 
-        $this->dispatch('task-updated');
+    public function delete()
+    {
+        $task = Task::find($this->tasksId);
 
-        return $this->redirect(route('boards.show', $this->boardId));
+        if ($task) {
+            $task->delete();
+            $this->board->touch();
+        }
+
+        $this->tasks = Task::where('board_id', $this->board->id)->get();
+        $this->cancelDelete();
+        $this->closeModal();
+
+        session()->flash('success', 'Task deleted successfully!');
+
+
+
     }
     public function askDelete()
     {
@@ -94,25 +119,6 @@ class EditModal extends Component
     }
 
 
-    public function delete()
-    {
-        $task = Task::find($this->tasksId);
-
-        if ($task) {
-            $task->delete();
-        }
-
-        $this->tasks = Task::where('board_id', $this->board->id)->get();
-        $this->cancelDelete();
-
-        $this->closeModal();
-
-        session()->flash('success', 'Task deleted successfully!');
-
-        $this->dispatch('task-deleted');
-
-        return $this->redirect(route('boards.show', $this->board->id));
-    }
 
 
     public function render()
