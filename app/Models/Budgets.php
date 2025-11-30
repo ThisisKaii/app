@@ -6,7 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Budgets extends Model
 {
-    protected $fillable = ['board_id', 'total_budget'];
+    protected $fillable = [
+        'board_id',
+        'total_budget',
+    ];
 
     public function board()
     {
@@ -15,6 +18,6 @@ class Budgets extends Model
 
     public function budgetTasks()
     {
-        return $this->hasMany(budget_task::class);
+        return $this->hasMany(BudgetCategory::class);
     }
 }

@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\budget_task;
+use App\Models\BudgetCategory;
 use App\Models\expenses;
 
 class expensesSeeder extends Seeder
@@ -14,16 +14,16 @@ class expensesSeeder extends Seeder
      */
     public function run(): void
     {
-        $budget_tasl = budget_task::first();
+        $budget_tasl = budgetCategory::first();
 
         expenses::create([
-            'budget_task_id' => $budget_tasl->id,
+            'budget_category_id' => $budget_tasl->id,
             'amount' => 500,
             'description' => 'Initial expense',
         ]);
 
         expenses::create([
-            'budget_task_id' => $budget_tasl->id,
+            'budget_category_id' => $budget_tasl->id,
             'amount' => 300,
             'description' => 'Secondary expense',
         ]);

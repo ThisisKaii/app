@@ -149,19 +149,7 @@
         </div> <!-- CLOSE CONTAINER -->
         <!-- My Tasks View -->
         <div id="tasks-view" class="tasks-view">
-            <div class="tasks-controls">
-                <button class="edit-filters-btn">
-                    <span>☰</span> Edit filters
-                </button>
-                <button class="new-page-btn">
-                    <span>+</span> New page
-                </button>
-            </div>
-            <div class="tasks-list">
-                <div class="empty-state">
-                    <p>No tasks assigned to you yet</p>
-                </div>
-            </div>
+            @livewire('tasks-list')
         </div>
     </main>
 

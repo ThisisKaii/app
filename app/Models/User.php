@@ -67,4 +67,10 @@ class User extends Authenticatable
             ->withPivot('role')
             ->withTimestamps();
     }
+
+    public function isOnline()
+    {
+        return cache()->has('user-online-' . $this->id);
+    }
+
 }

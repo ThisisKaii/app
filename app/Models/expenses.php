@@ -4,12 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class expenses extends Model
+class Expenses extends Model
 {
-    protected $fillable = ['task_id', 'amount', 'date', 'description'];
+    protected $fillable = [
+        'budget_task_id',
+        'amount',
+        'description',
+    ];
 
+    // Relationship: Expense belongs to a BudgetTask
     public function budgetTask()
     {
-        return $this->belongsTo(budget_task::class);
+        return $this->belongsTo(BudgetCategory::class);
     }
 }
