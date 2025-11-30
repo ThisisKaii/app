@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\BudgetCategory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\budget_task;
 use App\Models\Budgets;
 
-class budgetTaskSeeder extends Seeder
+class budgetCategorySeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -16,7 +16,7 @@ class budgetTaskSeeder extends Seeder
     {
         $budgets = Budgets::first();
 
-        budget_task::create([
+        BudgetCategory::create([
             'budget_id' => $budgets->id,
             'title' => 'Design Phase',
             'status' => 'draft',
