@@ -10,12 +10,15 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('budget_tasks', function (Blueprint $table) {
+        Schema::create('budget_categories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('budget_id')->constrained()->onDelete('cascade');
             $table->text('title');
+            $table->integer('order')->default(0);
+            $table->decimal('amount_estimated', 15, 2)->nullable();
             $table->enum('status', ['draft', 'pending', 'approved', 'rejected', 'completed'])
                 ->default('draft');
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }
@@ -25,7 +28,7 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::table('budget_tasks', function (Blueprint $table) {
+        Schema::table('budget_category', function (Blueprint $table) {
             //
         });
     }

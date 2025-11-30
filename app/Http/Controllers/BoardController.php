@@ -17,7 +17,8 @@ class BoardController extends Controller
 
             $taskLimit = null;
             $remainingTasks = null;
-
+            $board->touch();
+            
         return view('todo', compact('board', 'tasks', 'taskLimit'));
     }
 }
