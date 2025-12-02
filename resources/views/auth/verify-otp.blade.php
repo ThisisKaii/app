@@ -1,11 +1,18 @@
-{{-- resources/views/auth/reset-password.blade.php --}}
+{{-- resources/views/auth/verify-otp.blade.php --}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password</title>
+    <title>Verify OTP</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .otp-input {
+            font-size: 24px;
+            text-align: center;
+            letter-spacing: 10px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -13,7 +20,7 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
-                        <h4>Reset Password</h4>
+                        <h4>Verify OTP</h4>
                     </div>
                     <div class="card-body">
                         @if(session('success'))
@@ -24,48 +31,44 @@
                             <div class="alert alert-danger">{{ session('error') }}</div>
                         @endif
 
-                        <p>Please enter your new password:</p>
+                        <p>We've sent a 6-digit OTP to <strong>{{ session('email') }}</strong></p>
+                        <p class="text-muted">Please enter the OTP below:</p>
 
-                        <form method="POST" action="{{ route('password.update') }}">
+                        <form method="POST" action="{{ route('password.verify') }}">
                             @csrf
                             <input type="hidden" name="email" value="{{ session('email') }}">
-                            <input type="hidden" name="token" value="{{ session('token') }}">
 
                             <div class="mb-3">
-                                <label for="password" class="form-label">New Password</label>
                                 <input 
-                                    type="password" 
-                                    class="form-control @error('password') is-invalid @enderror" 
-                                    id="password" 
-                                    name="password" 
-                                    required
+                                    type="text" 
+                                    class="form-control otp-input @error('otp') is-invalid @enderror" 
+                                    id="otp" 
+                                    name="otp" 
+                                    maxlength="6"
+                                    placeholder="000000"
+                                    required 
+                                    autofocus
                                 >
-                                @error('password')
+                                @error('otp')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <small class="text-muted">Minimum 8 characters</small>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="password_confirmation" class="form-label">Confirm Password</label>
-                                <input 
-                                    type="password" 
-                                    class="form-control" 
-                                    id="password_confirmation" 
-                                    name="password_confirmation" 
-                                    required
-                                >
                             </div>
 
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary">
-                                    Reset Password
+                                    Verify OTP
                                 </button>
                             </div>
                         </form>
 
                         <div class="text-center mt-3">
-                            <a href="{{ route('login') }}">Back to Login</a>
+                            <form method="POST" action="{{ route('password.resend') }}" class="d-inline">
+                                @csrf
+                                <input type="hidden" name="email" value="{{ session('email') }}">
+                                <button type="submit" class="btn btn-link">Resend OTP</button>
+                            </form>
+                            <span class="mx-2">|</span>
+                            <a href="{{ route('password.request') }}">Change Email</a>
                         </div>
                     </div>
                 </div>
