@@ -4,12 +4,56 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\TaskController;
+use Illuminate\Support\Facades\Mail;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+
+// Password Reset Routes
+Route::middleware('guest')->group(function () {
+    // Show forgot password form
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'showForgotForm'])
+        ->name('password.request');
+
+    // Send OTP
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendOTP'])
+        ->name('password.email');
+
+    // Show OTP verification form
+    Route::get('/verify-otp', [ForgotPasswordController::class, 'showVerifyOTPForm'])
+        ->name('password.verify-otp');
+
+    // Verify OTP
+    Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOTP'])
+        ->name('password.verify');
+
+    // Show reset password form
+    Route::get('/reset-password', [ForgotPasswordController::class, 'showResetForm'])
+        ->name('password.reset');
+
+    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'])
+        ->name('password.update');
+
+    // Resend OTP
+    Route::post('/resend-otp', [ForgotPasswordController::class, 'resendOTP'])
+        ->name('password.resend');
+});
+Route::get('/test-email', function () {
+    try {
+        Mail::raw('This is a test email from Laravel', function ($message) {
+            $message->to('joshuaasingua499@gmail.com')
+                ->subject('Test Email From Joshua Asingua');
+        });
+
+        return 'Email sent successfully!';
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
+});
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::middleware('auth')->group( function() {
+Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\dashboardController::class, 'showBoard'])->name('dashboard');
 });
 
