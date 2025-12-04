@@ -1,8 +1,244 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    background-color: #161b22;
-    color: #c9d1d9;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
         "Helvetica Neue", Arial, sans-serif;
+    background-color: #161b22;
+    color: #c9d1d9;
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    background: #0d1117;
+    color: #e4e4e4;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #21262d;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+}
+
+.sidebar.collapsed {
+    transform: translateX(-280px);
+    pointer-events: none;
+}
+
+.sidebar-header {
+    padding: 1.5rem 1.25rem;
+    border-bottom: 1px solid #21262d;
+}
+
+.sidebar-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    color: #ffffff;
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 1rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    color: #a0a0a0;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.sidebar-link:hover {
+    background: #21262d;
+    color: #ffffff;
+}
+
+.sidebar-link.active {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.sidebar-link.active .sidebar-icon {
+    color: #ffffff;
+}
+
+.sidebar-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.sidebar-footer {
+    padding: 1rem;
+    border-top: 1px solid #21262d;
+}
+
+.sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.sidebar-user:hover {
+    background: #21262d;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-email {
+    font-size: 0.75rem;
+    color: #a0a0a0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Toggle Button */
+.sidebar-toggle {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 50px;
+    height: 50px;
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 1001;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-toggle:hover {
+    background: #21262d;
+    border-color: #30363d;
+    transform: scale(1.05);
+}
+
+.sidebar-toggle.sidebar-open {
+    left: 300px;
+}
+
+.burger-icon {
+    width: 24px;
+    height: 18px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.burger-line {
+    width: 100%;
+    height: 2px;
+    background: #c9d1d9;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.sidebar-toggle.sidebar-open .burger-line:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+}
+
+.sidebar-toggle.sidebar-open .burger-line:nth-child(2) {
+    opacity: 0;
+}
+
+.sidebar-toggle.sidebar-open .burger-line:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+}
+
+/* Main content area (demo) */
+.main-content {
+    margin-left: 280px;
+    padding: 2rem;
+    transition: margin-left 0.3s ease;
+}
+
+.main-content.expanded {
+    margin-left: 0;
+}
+
+.demo-header {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #f0f6fc;
+    margin-bottom: 1rem;
+}
+
+.demo-text {
+    color: #8b949e;
+    line-height: 1.6;
+}
+
+/* Overlay for mobile */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 999;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
 }
 
 .navbar {
@@ -39,42 +275,14 @@ body {
     font-size: 20px;
 }
 
-.view-tabs {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    padding-bottom: 0;
-}
-
-.view-tab {
-    padding: 0.5rem 1rem;
-    color: #8b949e;
-    text-decoration: none;
-    background-color: #21262d;
-    border-radius: 6px;
-    transition: all 0.2s;
-    font-size: 0.875rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.view-tab:hover {
-    color: #c9d1d9;
-    background-color: #30363d;
-}
-
-.view-tab.active {
-    color: #f0f6fc;
-    background-color: #30363d;
-}
-
+/* Default Kanban Container - Flex for main board */
 .kanban-container {
     display: flex;
     justify-content: center;
     gap: 1rem;
     padding: 2rem 0;
     align-items: flex-start;
+    flex-wrap: wrap;
 }
 
 .kanban-column {
@@ -240,7 +448,6 @@ body {
     font-size: 1rem;
     text-transform: capitalize;
     transition: background-color 0.5s ease;
-
     background-color: #161b22;
 }
 
@@ -462,26 +669,6 @@ body {
     background-color: #6e7681;
 }
 
-/* Override kanban-container for horizontal scroll */
-.kanban-container {
-    display: flex;
-    gap: 1rem;
-    padding: 2rem 0;
-    align-items: flex-start;
-    flex-wrap: nowrap;
-}
-
-/* Ensure columns don't shrink in teams view */
-.kanban-column {
-    flex: 0 0 280px;
-    min-width: 280px;
-}
-
-.tasklist-container {
-    width: 100%;
-    padding: 1rem 0;
-}
-
 /* Personal Tasks View */
 .personal-tasks-wrapper {
     max-width: 900px;
@@ -646,22 +833,26 @@ body {
     text-transform: capitalize;
 }
 
-.status-todo, .status-to_do {
+.status-todo,
+.status-to_do {
     background-color: rgba(110, 118, 129, 0.2);
     color: #8b949e;
 }
 
-.status-progress, .status-in_progress {
+.status-progress,
+.status-in_progress {
     background-color: rgba(88, 166, 255, 0.2);
     color: #58a6ff;
 }
 
-.status-review, .status-in_review {
+.status-review,
+.status-in_review {
     background-color: rgba(163, 113, 247, 0.2);
     color: #a371f7;
 }
 
-.status-completed, .status-published {
+.status-completed,
+.status-published {
     background-color: rgba(63, 185, 80, 0.2);
     color: #3fb950;
 }
@@ -685,7 +876,8 @@ body {
     color: #ef4444;
 }
 
-.due-today-badge, .due-tomorrow-badge {
+.due-today-badge,
+.due-tomorrow-badge {
     padding: 0.125rem 0.5rem;
     border-radius: 12px;
     font-size: 0.65rem;
@@ -755,31 +947,365 @@ body {
     background-color: rgba(88, 166, 255, 0.05);
 }
 
-/* Team Overview */
-.user-status-indicator {
+/* Hover effects for tasklist buttons */
+.tasklist-container button:hover {
+    color: #c9d1d9 !important;
+    background-color: #21262d !important;
+    border-color: #8b949e !important;
+}
+
+.tasklist-container button[style*="background-color: #30363d"]:hover {
+    background-color: #30363d !important;
+    border-color: #58a6ff !important;
+    color: #f0f6fc !important;
+}
+
+/* ================================================
+   JIRA-STYLE TEAMS VIEW
+   ================================================ */
+
+/* Teams Container */
+.teams-wrapper {
+    padding: 2rem;
+    max-width: 100%;
+    background-color: #161b22;
+}
+
+/* Teams Header */
+.teams-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #21262d;
+}
+
+.teams-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #f0f6fc;
+    margin: 0 0 0.5rem 0;
+}
+
+.teams-header p {
+    color: #8b949e;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+/* Team Member Columns - Horizontal Scroll */
+.teams .kanban-container {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+    align-items: flex-start;
+}
+
+/* Custom Scrollbar for horizontal scroll */
+.teams .kanban-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.teams .kanban-container::-webkit-scrollbar-track {
+    background: #0d1117;
+    border-radius: 4px;
+}
+
+.teams .kanban-container::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 4px;
+}
+
+.teams .kanban-container::-webkit-scrollbar-thumb:hover {
+    background: #484f58;
+}
+
+/* Team Member Column */
+.teams .kanban-column {
+    flex: 0 0 320px;
+    min-width: 320px;
+    max-width: 320px;
+    background-color: #0d1117;
+    border-radius: 8px;
+    border: 1px solid #21262d;
+    padding: 0;
+    height: fit-content;
+    max-height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Column Header - Jira Style */
+.teams .column-header {
+    padding: 1rem;
+    border-bottom: 1px solid #21262d;
+    background-color: #161b22;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.teams .team-member-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.teams .team-member-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: white;
+    text-transform: uppercase;
+}
+
+.teams .team-member-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.teams .team-member-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #f0f6fc;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.teams .team-task-count {
+    background-color: #21262d;
+    color: #8b949e;
+    padding: 0.25rem 0.625rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Cards Container - Scrollable */
+.teams .cards-container {
+    padding: 1rem;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 100px;
+}
+
+.teams .cards-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.teams .cards-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.teams .cards-container::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 3px;
+}
+
+.teams .cards-container::-webkit-scrollbar-thumb:hover {
+    background: #484f58;
+}
+
+/* Task Cards - Jira Style */
+.teams .task-card {
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 0.875rem;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.teams .task-card:hover {
+    border-color: #58a6ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.teams .task-card:last-child {
+    margin-bottom: 0;
+}
+
+.teams .task-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.teams .task-card-title {
+    color: #f0f6fc;
+    font-weight: 500;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    flex: 1;
+    margin: 0;
+    word-break: break-word;
+}
+
+.teams .task-card-meta {
+    color: #8b949e;
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.teams .task-card-description {
+    color: #8b949e;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    margin-top: 0.5rem;
+}
+
+/* Status Badge - Inline with title */
+.teams .status-badge {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     flex-shrink: 0;
+    margin-top: 0.25rem;
 }
 
-.user-status-indicator.online {
-    background-color: #3fb950;
-}
-
-.user-status-indicator.offline {
-    background-color: #6e7681;
-}
-
-.kanban-container {
+/* Task Type Icon */
+.teams .task-type-icon {
+    width: 20px;
+    height: 20px;
     display: flex;
-    gap: 1rem;
-    padding: 2rem 0;
-    align-items: flex-start;
-    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
 }
 
-.kanban-column {
-    flex: 0 0 280px;
-    min-width: 280px;
+/* Empty State - Jira Style */
+.teams .empty-state {
+    text-align: center;
+    color: #6e7681;
+    padding: 2rem 1rem;
+    font-size: 0.875rem;
+}
+
+.teams .empty-state-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+}
+
+/* Show More Button - Jira Style */
+.teams .show-more-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #58a6ff;
+    background: transparent;
+    border: 1px dashed #30363d;
+    border-radius: 6px;
+    padding: 0.75rem;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+.teams .show-more-button:hover {
+    border-color: #58a6ff;
+    background-color: rgba(88, 166, 255, 0.05);
+}
+
+/* Unassigned Column - Special Styling */
+.teams .kanban-column.unassigned {
+    border: 1px dashed #30363d;
+    background-color: rgba(13, 17, 23, 0.5);
+}
+
+.teams .kanban-column.unassigned .column-header {
+    background-color: rgba(22, 27, 34, 0.5);
+}
+
+/* Priority Indicators */
+.teams .priority-flag {
+    width: 3px;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    border-radius: 6px 0 0 6px;
+}
+
+.teams .task-card.priority-high {
+    border-left: 3px solid #ef4444;
+}
+
+.teams .task-card.priority-medium {
+    border-left: 3px solid #fbbf24;
+}
+
+.teams .task-card.priority-low {
+    border-left: 3px solid #58a6ff;
+}
+
+/* Due Date Badge */
+.teams .due-date-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background-color: rgba(139, 148, 158, 0.2);
+    color: #8b949e;
+}
+
+.teams .due-date-badge.overdue {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.teams .due-date-badge.due-soon {
+    background-color: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .teams-wrapper {
+        padding: 1rem;
+    }
+
+    .teams .kanban-column {
+        flex: 0 0 280px;
+        min-width: 280px;
+        max-width: 280px;
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    .sidebar-toggle.sidebar-open {
+        left: 20px;
+    }
 }
