@@ -53,6 +53,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/todobido', function () {
+    return view('todobido');
+})->name('todobido');
+
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\dashboardController::class, 'showBoard'])->name('dashboard');
 });
@@ -64,9 +68,9 @@ Route::middleware('auth')->group(function () {
 });
 
 # Task and Board Routes - Final Proj
-Route::get('/todo/{board}', [BoardController::class, 'show'])->name('boards.show');
-Route::post('/todo', [TaskController::class, 'store'])->name('tasks.store');
-Route::patch('/todo/{task}', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
+Route::get('/todobido/{board}', [BoardController::class, 'show'])->name('boards.show');
+Route::post('/todobido', [TaskController::class, 'store'])->name('tasks.store');
+Route::patch('/todobido/{task}', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
 #
 
 Route::get('/test', function () {
