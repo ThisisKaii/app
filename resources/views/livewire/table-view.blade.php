@@ -3,7 +3,7 @@
     <div class="table-header">
         <h2 class="table-title">Tasks Overview</h2>
         <div class="table-stats">
-            <button class="filter-btn" onclick="toggleFilters()">
+            <button class="filter-btn" wire:click="toggleFilters">
                 <svg class="stat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -26,56 +26,57 @@
         </div>
     </div>
 
-    <div class="filter-panel" id="filterPanel">
-        <div class="filter-content">
-            <div class="filter-group">
-                <label class="filter-label">Status</label>
-                <select class="filter-select" wire:model.live="statusFilter">
-                    <option value="">All Statuses</option>
-                    <option value="to_do">To Do</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="in_review">In Review</option>
-                    <option value="completed">Completed</option>
-                </select>
-            </div>
+    @if($showFilters)
+        <div class="filter-panel active">
+            <div class="filter-content">
+                <div class="filter-group">
+                    <label class="filter-label">Status</label>
+                    <select class="filter-select" wire:model.live="statusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="to_do">To Do</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="in_review">In Review</option>
+                        <option value="published">Published</option>
+                    </select>
+                </div>
 
-            <div class="filter-group">
-                <label class="filter-label">Priority</label>
-                <select class="filter-select" wire:model.live="priorityFilter">
-                    <option value="">All Priorities</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                </select>
-            </div>
+                <div class="filter-group">
+                    <label class="filter-label">Priority</label>
+                    <select class="filter-select" wire:model.live="priorityFilter">
+                        <option value="">All Priorities</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
 
-            <div class="filter-group">
-                <label class="filter-label">Assignee</label>
-                <select class="filter-select" wire:model.live="assigneeFilter">
-                    <option value="">All Assignees</option>
-                    @php
-                        $uniqueAssignees = collect($tasks)->pluck('assignee')->filter()->unique('name')->sortBy('name');
-                    @endphp
-                    @foreach($uniqueAssignees as $assignee)
-                        <option value="{{ $assignee->name }}">{{ $assignee->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+                <div class="filter-group">
+                    <label class="filter-label">Assignee</label>
+                    <select class="filter-select" wire:model.live="assigneeFilter">
+                        <option value="">All Assignees</option>
+                        @php
+                            $uniqueAssignees = collect($tasks)->pluck('assignee')->filter()->unique('name')->sortBy('name');
+                        @endphp
+                        @foreach($uniqueAssignees as $assignee)
+                            <option value="{{ $assignee->name }}">{{ $assignee->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-            <div class="filter-group">
-                <label class="filter-label">Search</label>
-                <input type="text" class="filter-input" placeholder="Search tasks..."
-                    wire:model.live.debounce.300ms="searchFilter">
+                <div class="filter-group">
+                    <label class="filter-label">Search</label>
+                    <input type="text" class="filter-input" placeholder="Search tasks..."
+                        wire:model.live.debounce.100ms="searchFilter">
+                </div>
+                <button class="clear-filters-btn" wire:click="clearFilters">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Clear Filters
+                </button>
             </div>
-
-            <button class="clear-filters-btn" wire:click="clearFilters">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Clear Filters
-            </button>
         </div>
-    </div>
+    @endif
 
     @if(count($tasks) > 0)
         <div class="table-wrapper">
@@ -119,9 +120,6 @@
                             <td>
                                 @if(isset($task->assignee) && $task->assignee)
                                     <div class="assignee-info">
-                                        <div class="assignee-avatar">
-                                            {{ substr($task->assignee->name, 0, 1) }}
-                                        </div>
                                         <span class="assignee-name">{{ $task->assignee->name }}</span>
                                     </div>
                                 @else
@@ -181,10 +179,3 @@
         </div>
     @endif
 </div>
-
-<script>
-    function toggleFilters() {
-        const filterPanel = document.getElementById('filterPanel');
-        filterPanel.classList.toggle('active');
-    }
-</script>
