@@ -9,7 +9,7 @@ class Views extends Component
 {
     public $view;
     public $boardId;
-    public $renderKey = 0; // Add this line!
+    public $renderKey = 0;
 
     public function mount($board)
     {
@@ -21,13 +21,23 @@ class Views extends Component
     public function changeView($viewName)
     {
         \Log::info('Changing view to: ' . $viewName);
-        $this->view = $viewName;
-        $this->renderKey++; // Increment to force re-render
+        
+        // Only change view if it's different from current view
+        if ($this->view !== $viewName) {
+            $this->view = $viewName;
+            $this->renderKey++;
+            
+            // Force Livewire to re-render
+            $this->dispatch('$refresh');
+        } else {
+            // If same view, do nothing - prevents the wire:key bug
+            \Log::info('Same view clicked, ignoring');
+        }
     }
 
     public function render()
     {
-        \Log::info('Current view: ' . $this->view);
+        \Log::info('Current view: ' . $this->view . ', renderKey: ' . $this->renderKey);
         return view('livewire.views');
     }
 }
