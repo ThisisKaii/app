@@ -13,24 +13,27 @@
 
 <body>
     @if(session('success'))
-        <div id="toast-success"
-            style="position: fixed; top: 20px; right: 20px; z-index: 9999; background: #10b981; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 0.75rem; animation: slideIn 0.3s ease;">
-            <span style="font-size: 1.5rem;">✓</span>
-            <span>{{ session('success') }}</span>
-            <button onclick="this.parentElement.remove()"
-                style="background: none; border: none; color: white; font-size: 1.25rem; cursor: pointer; padding: 0; margin-left: 0.5rem; line-height: 1;">&times;</button>
+        <div id="toast-success" class="toast toast-success">
+            <div class="toast-content">
+                <span class="toast-icon">✓</span>
+                <span class="toast-message">{{ session('success') }}</span>
+                <button onclick="this.closest('.toast').remove()" class="toast-close">&times;</button>
+            </div>
+            <div class="toast-timer"></div>
         </div>
     @endif
 
     @if(session('error'))
-        <div id="toast-error"
-            style="position: fixed; top: 20px; right: 20px; z-index: 9999; background: #ef4444; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 0.75rem; animation: slideIn 0.3s ease;">
-            <span style="font-size: 1.5rem;">✕</span>
-            <span>{{ session('error') }}</span>
-            <button onclick="this.parentElement.remove()"
-                style="background: none; border: none; color: white; font-size: 1.25rem; cursor: pointer; padding: 0; margin-left: 0.5rem; line-height: 1;">&times;</button>
+        <div id="toast-error" class="toast toast-error">
+            <div class="toast-content">
+                <span class="toast-icon">✕</span>
+                <span class="toast-message">{{ session('error') }}</span>
+                <button onclick="this.closest('.toast').remove()" class="toast-close">&times;</button>
+            </div>
+            <div class="toast-timer"></div>
         </div>
     @endif
+
     <!-- Sidebar Overlay -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -90,7 +93,7 @@
         <h1 class="demo-header">Welcome to Your Workspace</h1>
         @livewire('views', ['board' => $board])
     </div>
-    
+
     <script>
         const sidebar = document.getElementById('sidebar');
         const sidebarToggle = document.getElementById('sidebarToggle');
@@ -117,6 +120,14 @@
             link.addEventListener('click', function (e) {
                 e.preventDefault(); // prevent default anchor behavior
 
+                const view = this.dataset.view;
+
+                // Check if this link is already active (same view clicked)
+                if (this.classList.contains('active')) {
+                    console.log('Same view clicked, ignoring');
+                    return; // Exit early - don't dispatch event
+                }
+
                 // Remove active from all links
                 sidebarLinks.forEach(l => l.classList.remove('active'));
 
@@ -124,11 +135,15 @@
                 this.classList.add('active');
 
                 // Emit Livewire event to change view
-                const view = this.dataset.view;
                 Livewire.dispatch('board-change', { viewName: view });
             });
         });
 
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.toast').forEach(toast => {
+                setTimeout(() => toast.remove(), 5000);
+            });
+        });
     </script>
     @livewireScripts
 </body>
