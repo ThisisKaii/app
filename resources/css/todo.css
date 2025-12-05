@@ -1737,16 +1737,43 @@ body {
 }
 
 .filter-panel {
-    display: none;
-    padding: 1.5rem 2rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+    padding: 0 2rem;
     background: #161b22;
     border-bottom: 1px solid #21262d;
 }
 
 .filter-panel.active {
-    display: block;
+    max-height: 600px;
+    padding: 1.5rem 2rem;
+}
+/* Search Input with Icon */
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
 }
 
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    width: 1.125rem;
+    height: 1.125rem;
+    color: #6e7681;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.search-input {
+    padding-left: 2.5rem !important;
+}
+
+.filter-input.search-input:focus ~ .search-icon,
+.filter-input.search-input:not(:placeholder-shown) ~ .search-icon {
+    color: #58a6ff;
+}
 .filter-content {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -1767,7 +1794,43 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
+/* Force dark theme for filter inputs */
+.filter-input {
+    padding: 0.5rem 0.75rem;
+    background: #0d1117 !important;
+    color: #c9d1d9 !important;
+    border: 1px solid #30363d !important;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
 
+.filter-input:hover {
+    border-color: #58a6ff !important;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #58a6ff !important;
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1) !important;
+    background: #0d1117 !important;
+    color: #c9d1d9 !important;
+}
+
+/* Fix autofill styles */
+.filter-input:-webkit-autofill,
+.filter-input:-webkit-autofill:hover,
+.filter-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #c9d1d9 !important;
+    -webkit-box-shadow: 0 0 0px 1000px #0d1117 inset !important;
+    border: 1px solid #30363d !important;
+}
+
+/* Placeholder color */
+.filter-input::placeholder {
+    color: #6e7681;
+    opacity: 1;
+}
 .filter-select,
 .filter-input {
     padding: 0.5rem 0.75rem;
