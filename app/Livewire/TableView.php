@@ -17,7 +17,7 @@ class TableView extends Component
     public $searchFilter = '';
 
     public $showFilters = false;
-
+    protected $listeners = ['taskSaved' => 'loadTasks'];
     public function mount($boardId)
     {
         $this->boardId = $boardId;
