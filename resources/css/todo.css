@@ -317,7 +317,9 @@ body {
 .status-badge.review {
     background-color: #a371f7;
 }
-
+.teams .kanban-container {
+    justify-content: flex-start !important;
+}
 .status-badge.progress {
     background-color: #58a6ff;
 }
@@ -325,7 +327,27 @@ body {
 .status-badge.published {
     background-color: #3fb950;
 }
+.tag-badge {
+    font-weight: 500;
+    white-space: nowrap;
+}
 
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.text-red-500 {
+    color: #ef4444;
+}
+
+.error-message {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    display: block;
+}
 .cards-container {
     min-height: 20px;
     margin-bottom: 0.75rem;
@@ -585,6 +607,17 @@ body {
     gap: 0.5rem;
 }
 
+.members{
+    background-color: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: default !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
 .edit-filters-btn:hover {
     background-color: #30363d;
 }
@@ -1459,6 +1492,11 @@ body {
 .status-in-progress {
     background: rgba(88, 166, 255, 0.2);
     color: #58a6ff;
+}
+
+.status-in-review {
+    background: rgba(88, 166, 255, 0.2);
+    color: #a371f7;
 }
 
 .status-done,
