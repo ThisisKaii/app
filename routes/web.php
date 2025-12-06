@@ -78,6 +78,17 @@ Route::middleware('auth')->group(function () {
 });
 #
 
+Route::middleware('auth')->group(function () {
+    // Board management
+    Route::post('/boards', [BoardController::class, 'store'])->name('boards.store');
+    Route::patch('/boards/{board}', [BoardController::class, 'update'])->name('boards.update');
+    Route::delete('/boards/{board}', [BoardController::class, 'destroy'])->name('boards.destroy');
+    
+    // Task management
+    Route::patch('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
+    Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
+});
+
 Route::get('/test', function () {
     return view('/test');
 });

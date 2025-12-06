@@ -9,7 +9,11 @@
         </div>
     @elseif($view === 'tasks')
         <div style="padding: 2rem;" wire:key="tasks-view-{{ $renderKey }}">
-            <livewire:tasks-list :key="'tasks-'.$renderKey" />
+            <livewire:tasks-list :boardId="$boardId" :key="'tasks-'.$renderKey" />
+        </div>
+    @elseif($view === 'members')
+        <div style="padding: 2rem;" wire:key="members-view-{{ $renderKey }}">
+            <livewire:members-list :boardId="$boardId" :key="'members-'.$renderKey" />
         </div>
     @endif
 </div>
