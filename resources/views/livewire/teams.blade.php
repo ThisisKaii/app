@@ -7,7 +7,7 @@
         </div>
 
         <!-- Teams View (columns by user + unassigned) -->
-        <div class="kanban-container">
+        <div class="kanban-container" style="justify-content: flex-start;">
             <!-- Each team member -->
             @foreach($teamMembers as $member)
                 <div class="kanban-column">
@@ -15,7 +15,8 @@
                         <div class="team-member-info">
                             <div class="team-member-details">
                                 <div class="team-member-name">
-                                    <div class="user-status-indicator {{ $member->isOnline() ? 'online' : 'offline' }}"></div>
+                                    <div class="user-status-indicator {{ $member->isOnline() ? 'online' : 'offline' }}">
+                                    </div>
                                     <span>{{ $member->name }}</span>
                                 </div>
                             </div>
@@ -27,23 +28,25 @@
 
                     <div class="cards-container">
                         @php
-                            $visibleTasks = $member->tasks->take(8);
+                            $isExpanded = $this->isExpanded($member->id);
+                            $visibleTasks = $isExpanded ? $member->tasks : $member->tasks->take(8);
                             $remainingCount = $member->tasks->count() - 8;
                         @endphp
 
                         @forelse($visibleTasks as $task)
-                            <div class="task-card {{ $task->priority ? 'priority-' . strtolower($task->priority) : '' }}">
+                            <div class="task-card {{ $task->priority ? 'priority-' . strtolower($task->priority) : '' }}"
+                                style="cursor: pointer;" wire:click="$dispatch('openTaskModal', { taskId: {{ $task->id }} })">
                                 <div class="task-card-header">
                                     <div class="status-badge {{ $task->status }}"></div>
                                     <div class="task-card-title">{{ $task->title }}</div>
                                 </div>
-                                
+
                                 @if($task->description)
                                     <div class="task-card-description">
                                         {{ Str::limit($task->description, 80) }}
                                     </div>
                                 @endif
-                                
+
                                 <div class="task-card-meta">
                                     @if($task->due_date)
                                         @php
@@ -56,7 +59,7 @@
                                             📅 {{ $dueDate->format('M d') }}
                                         </span>
                                     @endif
-                                    
+
                                     @if($task->type)
                                         <span style="color: #8b949e; font-size: 0.7rem;">
                                             {{ ucfirst($task->type) }}
@@ -71,10 +74,15 @@
                             </div>
                         @endforelse
 
-                        @if($remainingCount > 0)
-                            <button class="show-more-button">
+                        @if($remainingCount > 0 && !$isExpanded)
+                            <button class="show-more-button" wire:click="showMore({{ $member->id }})">
                                 <span>↓</span>
                                 <span>Show {{ $remainingCount }} more</span>
+                            </button>
+                        @elseif($isExpanded && $member->tasks->count() > 8)
+                            <button class="show-more-button" wire:click="showMore({{ $member->id }})">
+                                <span>↑</span>
+                                <span>Show less</span>
                             </button>
                         @endif
                     </div>
@@ -85,7 +93,8 @@
             <div class="kanban-column unassigned">
                 <div class="column-header">
                     <div class="team-member-info">
-                        <div class="team-member-avatar" style="background: linear-gradient(135deg, #6e7681 0%, #484f58 100%);">
+                        <div class="team-member-avatar"
+                            style="background: linear-gradient(135deg, #6e7681 0%, #484f58 100%);">
                             📌
                         </div>
                         <div class="team-member-details">
@@ -101,23 +110,25 @@
 
                 <div class="cards-container">
                     @php
-                        $visibleTasks = $unassignedTasks->take(8);
+                        $isExpanded = $this->isExpanded('unassigned');
+                        $visibleTasks = $isExpanded ? $unassignedTasks : $unassignedTasks->take(8);
                         $remainingCount = $unassignedTasks->count() - 8;
                     @endphp
 
                     @forelse($visibleTasks as $task)
-                        <div class="task-card {{ $task->priority ? 'priority-' . strtolower($task->priority) : '' }}">
+                        <div class="task-card {{ $task->priority ? 'priority-' . strtolower($task->priority) : '' }}"
+                            style="cursor: pointer;" wire:click="$dispatch('openTaskModal', { taskId: {{ $task->id }} })">
                             <div class="task-card-header">
                                 <div class="status-badge {{ $task->status }}"></div>
                                 <div class="task-card-title">{{ $task->title }}</div>
                             </div>
-                            
+
                             @if($task->description)
                                 <div class="task-card-description">
                                     {{ Str::limit($task->description, 80) }}
                                 </div>
                             @endif
-                            
+
                             <div class="task-card-meta">
                                 @if($task->due_date)
                                     @php
@@ -130,7 +141,7 @@
                                         📅 {{ $dueDate->format('M d') }}
                                     </span>
                                 @endif
-                                
+
                                 @if($task->type)
                                     <span style="color: #8b949e; font-size: 0.7rem;">
                                         {{ ucfirst($task->type) }}
@@ -145,10 +156,15 @@
                         </div>
                     @endforelse
 
-                    @if($remainingCount > 0)
-                        <button class="show-more-button">
+                    @if($remainingCount > 0 && !$isExpanded)
+                        <button class="show-more-button" wire:click="showMoreUnassigned">
                             <span>↓</span>
                             <span>Show {{ $remainingCount }} more</span>
+                        </button>
+                    @elseif($isExpanded && $unassignedTasks->count() > 8)
+                        <button class="show-more-button" wire:click="showMoreUnassigned">
+                            <span>↑</span>
+                            <span>Show less</span>
                         </button>
                     @endif
                 </div>

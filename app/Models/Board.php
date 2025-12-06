@@ -29,4 +29,6 @@ class Board extends Model
     {
         return $this->hasOne(Budgets::class);
     }
+
+
 }
