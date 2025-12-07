@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use App\Models\Board;
-use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
 {
@@ -24,89 +24,103 @@ class TaskController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        // Authorization check
         $board = Board::findOrFail($validated['board_id']);
         Gate::authorize('createTask', $board);
 
         $validated['user_id'] = auth()->id();
-
-        // Get the max order for this status
-        $maxOrder = Task::where('board_id', $validated['board_id'])
+        $validated['order'] = Task::where('board_id', $validated['board_id'])
             ->where('status', $validated['status'])
-            ->where('user_id', auth()->id())
-            ->max('order') ?? -1;
+            ->max('order') + 1 ?? 0;
 
-        $validated['order'] = $maxOrder + 1;
+        Task::create($validated);
 
-        $task = Task::create($validated);
-
-        // Log activity
-        ActivityLog::log(
-            $board->id,
-            'Task',
-            $task->id,
-            'created',
-            auth()->user()->name . ' created task "' . $task->title . '"'
-        );
-
-        return redirect()->back()->with('success', 'Task created successfully!');
+        return redirect()->back()->with('success', 'Task created!');
     }
 
-    public function updateStatus(Request $request, Task $task)
+    public function updateStatus(Request $request, $taskId)
     {
-        // Authorization check
-        $board = $task->board;
-        Gate::authorize('viewTasks', $board);
-
-        $validated = $request->validate([
-            'status' => 'required|in:to_do,in_review,in_progress,published',
-            'new_order' => 'nullable|integer|min:0'
+        // Log the incoming request for debugging
+        Log::info('Task update request', [
+            'task_id' => $taskId,
+            'request_data' => $request->all()
         ]);
 
+        // Find the task
+        $task = Task::find($taskId);
+
+        if (!$task) {
+            Log::error('Task not found', ['task_id' => $taskId]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Task not found'
+            ], 404);
+        }
+
+        // Check authorization
         try {
-            $oldStatus = $task->status;
-            
-            $task->status = $validated['status'];
-            $task->order = $validated['new_order'] ?? 0;
-            $task->save();
+            Gate::authorize('viewTasks', $task->board);
+        } catch (\Exception $e) {
+            Log::error('Authorization failed', [
+                'task_id' => $taskId,
+                'user_id' => auth()->id(),
+                'board_id' => $task->board_id,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized: ' . $e->getMessage()
+            ], 403);
+        }
 
-            // Log activity only if status changed
-            if ($oldStatus !== $validated['status']) {
-                ActivityLog::log(
-                    $board->id,
-                    'Task',
-                    $task->id,
-                    'status_changed',
-                    auth()->user()->name . ' moved "' . $task->title . '" from ' . 
-                    str_replace('_', ' ', $oldStatus) . ' to ' . str_replace('_', ' ', $validated['status'])
-                );
-            }
+        // Validate the request
+        try {
+            $validated = $request->validate([
+                'status' => 'required|in:to_do,in_review,in_progress,published',
+                'new_order' => 'nullable|integer|min:0'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Validation failed', [
+                'task_id' => $taskId,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . $e->getMessage()
+            ], 422);
+        }
 
-            \Log::info('Task updated successfully', [
-                'task_id' => $task->id,
-                'status' => $task->status,
-                'order' => $task->order
+        // Update the task
+        try {
+            $task->update([
+                'status' => $validated['status'],
+                'order' => $validated['new_order'] ?? $task->order,
             ]);
 
-            return response()->json(['success' => true]);
-        } catch (\Exception $e) {
-            \Log::error('Update failed', [
-                'error' => $e->getMessage(),
-                'task_id' => $task->id
+            Log::info('Task updated successfully', [
+                'task_id' => $taskId,
+                'new_status' => $validated['status']
             ]);
 
             return response()->json([
+                'success' => true,
+                'message' => 'Task updated successfully',
+                'task' => $task
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Task update failed', [
+                'task_id' => $taskId,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => 'Update failed: ' . $e->getMessage()
             ], 500);
         }
     }
 
     public function update(Request $request, Task $task)
     {
-        // Authorization check
-        $board = $task->board;
-        Gate::authorize('viewTasks', $board);
+        Gate::authorize('viewTasks', $task->board);
 
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255',
@@ -119,48 +133,15 @@ class TaskController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $changes = [];
-        foreach ($validated as $key => $value) {
-            if ($task->$key != $value) {
-                $changes[] = $key;
-            }
-        }
-
         $task->update($validated);
 
-        // Log activity
-        if (!empty($changes)) {
-            ActivityLog::log(
-                $board->id,
-                'Task',
-                $task->id,
-                'updated',
-                auth()->user()->name . ' updated task "' . $task->title . '" (' . implode(', ', $changes) . ')'
-            );
-        }
-
-        return redirect()->back()->with('success', 'Task updated successfully!');
+        return redirect()->back()->with('success', 'Task updated!');
     }
 
     public function destroy(Task $task)
     {
-        // Authorization check
-        $board = $task->board;
-        Gate::authorize('viewTasks', $board);
-
-        $title = $task->title;
-        
-        // Log activity before deletion
-        ActivityLog::log(
-            $board->id,
-            'Task',
-            null,
-            'deleted',
-            auth()->user()->name . ' deleted task "' . $title . '"'
-        );
-
+        Gate::authorize('viewTasks', $task->board);
         $task->delete();
-
-        return redirect()->back()->with('success', 'Task deleted successfully!');
+        return redirect()->back()->with('success', 'Task deleted!');
     }
 }
