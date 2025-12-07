@@ -175,14 +175,6 @@ class MembersList extends Component
                 'updated_at' => now(),
             ]);
 
-            ActivityLog::log(
-                $this->boardId,
-                'Board',
-                $this->boardId,
-                'member_added',
-                auth()->user()->name . ' added ' . $user->name . ' as ' . $this->role
-            );
-
             $this->closeAddModal();
             $this->loadBoard();
             session()->flash('success', 'Member added successfully!');
@@ -235,14 +227,6 @@ class MembersList extends Component
                 return;
             }
 
-            ActivityLog::log(
-                $this->boardId,
-                'Board',
-                $this->boardId,
-                'member_removed',
-                auth()->user()->name . ' removed ' . $member->name . ' from the board'
-            );
-
             $this->board->members()->detach($this->deletingMemberId);
             $this->cancelDelete();
             $this->loadBoard();
@@ -289,15 +273,6 @@ class MembersList extends Component
                 'updated_at' => now(),
             ]);
 
-            // Log the activity
-            ActivityLog::log(
-                $this->boardId,
-                'Board',
-                $this->boardId,
-                'role_changed',
-                auth()->user()->name . ' changed ' . $member->name . "'s role from " .
-                $oldRole . ' to ' . $newRole
-            );
 
             // Reload the board to reflect changes
             $this->loadBoard();

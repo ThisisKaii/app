@@ -37,10 +37,9 @@ class AddBoard extends Component
 
         session()->flash('success', 'Board created successfully.');
 
-        $this->dispatch(
-            'boardAdded',
-            ['boardId' => $board->id,],
-        );
+        $this->dispatch('board-added', boardId: $board->id);
+
+        return redirect()->route('boards.show', $board->id);
 
     }
 
