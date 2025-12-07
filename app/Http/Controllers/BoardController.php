@@ -65,15 +65,6 @@ class BoardController extends Controller
             'updated_at' => now(),
         ]);
 
-        // Log activity
-        ActivityLog::log(
-            $board->id,
-            'Board',
-            $board->id,
-            'created',
-            auth()->user()->name . ' created the board "' . $board->title . '"'
-        );
-
         return redirect()->route('boards.show', $board)
             ->with('success', 'Board created successfully!');
     }
@@ -88,15 +79,6 @@ class BoardController extends Controller
 
         $oldTitle = $board->title;
         $board->update($validated);
-
-        // Log activity
-        ActivityLog::log(
-            $board->id,
-            'Board',
-            $board->id,
-            'updated',
-            auth()->user()->name . ' renamed board from "' . $oldTitle . '" to "' . $board->title . '"'
-        );
 
         return back()->with('success', 'Board updated successfully!');
     }

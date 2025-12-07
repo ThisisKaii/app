@@ -9,12 +9,12 @@ use App\Models\User;
 use App\Models\Tag;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 
 class TableView extends Component
 {
     public $boardId;
     public $board;
-    public $tasks = [];
 
     // Filter properties
     public $statusFilter = '';
@@ -25,9 +25,10 @@ class TableView extends Component
 
     // Modal properties
     public $showModal = false;
-    public $showDeleteConfirm = false;
+    public $showDeleteModal = false;
     public $isEditing = false;
     public $taskId = null;
+    public $deleteTaskId = null;
 
     // Form fields
     public $title = '';
@@ -40,7 +41,6 @@ class TableView extends Component
     public $assignee_id = null;
     public $tagsInput = '';
 
-    public $users = [];
     public $availableColors = [
         '#ef4444',
         '#f59e0b',
@@ -52,67 +52,53 @@ class TableView extends Component
         '#ec4899',
     ];
 
+    protected $listeners = [
+        'taskSaved' => '$refresh',
+        'taskDeleted' => '$refresh'
+    ];
+
     public function mount($boardId)
     {
         $this->boardId = $boardId;
         $this->board = Board::findOrFail($boardId);
-        $this->loadTasks();
-        $this->loadUsers();
     }
 
-    public function loadUsers()
-    {
-        $this->users = $this->board->members()->orderBy('name')->get();
-    }
-
-    public function loadTasks()
+    public function getTasks()
     {
         try {
-            $board = Board::with([
-                'tasks' => function ($query) {
-                    $query->with(['assignee', 'tags'])->orderBy('order');
-                }
-            ])->find($this->boardId);
+            $query = Task::where('board_id', $this->boardId)
+                ->with(['assignee', 'tags'])
+                ->orderBy('order');
 
-            if ($board && $board->tasks) {
-                $this->tasks = $this->applyFilters($board->tasks);
-            } else {
-                $this->tasks = collect([]);
+            if ($this->statusFilter) {
+                $query->where('status', $this->statusFilter);
             }
+
+            if ($this->priorityFilter) {
+                $query->where('priority', $this->priorityFilter);
+            }
+
+            if ($this->assigneeFilter) {
+                $query->whereHas('assignee', function ($q) {
+                    $q->where('name', $this->assigneeFilter);
+                });
+            }
+
+            if ($this->searchFilter) {
+                $query->where('title', 'like', '%' . $this->searchFilter . '%');
+            }
+
+            return $query->get();
+
         } catch (\Exception $e) {
-            \Log::error('TableView Error: ' . $e->getMessage());
-            $this->tasks = collect([]);
+            Log::error('TableView Error: ' . $e->getMessage());
+            return collect([]);
         }
     }
 
-    public function applyFilters($tasks)
+    public function getUsers()
     {
-        $filtered = $tasks;
-
-        if ($this->statusFilter) {
-            $filtered = $filtered->filter(fn($task) => $task->status === $this->statusFilter);
-        }
-
-        if ($this->priorityFilter) {
-            $filtered = $filtered->filter(fn($task) => strtolower($task->priority ?? '') === strtolower($this->priorityFilter));
-        }
-
-        if ($this->assigneeFilter) {
-            $filtered = $filtered->filter(fn($task) => $task->assignee && $task->assignee->name === $this->assigneeFilter);
-        }
-
-        if ($this->searchFilter) {
-            $filtered = $filtered->filter(fn($task) => stripos($task->title, $this->searchFilter) !== false);
-        }
-
-        return $filtered;
-    }
-
-    public function updated($property)
-    {
-        if (in_array($property, ['statusFilter', 'priorityFilter', 'assigneeFilter', 'searchFilter'])) {
-            $this->loadTasks();
-        }
+        return $this->board->members()->orderBy('name')->get();
     }
 
     public function toggleFilters()
@@ -126,53 +112,105 @@ class TableView extends Component
         $this->priorityFilter = '';
         $this->assigneeFilter = '';
         $this->searchFilter = '';
-        $this->loadTasks();
     }
 
-    public function openModal($taskId = null)
+    public function openTaskModal($taskId = null)
     {
         $this->resetForm();
+        $this->resetValidation();
 
         if ($taskId) {
-            $this->loadTask($taskId);
+            $task = Task::with('tags')->find($taskId);
+
+            if (!$task) {
+                session()->flash('error', 'Task not found');
+                return;
+            }
+
+            // Check authorization for viewing/editing
+            if (!Gate::allows('viewTasks', $this->board)) {
+                session()->flash('error', 'You are not authorized to view this task.');
+                return;
+            }
+
+            $this->isEditing = true;
+            $this->taskId = $taskId;
+            $this->title = $task->title;
+            $this->description = $task->description ?? '';
+            $this->type = $task->type ?? '';
+            $this->priority = $task->priority ?? '';
+            $this->status = $task->status;
+            $this->due_date = $task->due_date ? $task->due_date->format('Y-m-d') : null;
+            $this->url = $task->url ?? '';
+            $this->assignee_id = $task->assignee_id;
+
+            if ($task->tags->count() > 0) {
+                $this->tagsInput = $task->tags->pluck('name')->implode(', ');
+            }
+        } else {
+            $this->isEditing = false;
+            $this->taskId = null;
         }
 
         $this->showModal = true;
     }
 
-    public function loadTask($taskId)
+    public function saveTask()
     {
-        $task = Task::with('tags')->find($taskId);
+        Log::info('saveTask called', [
+            'isEditing' => $this->isEditing,
+            'taskId' => $this->taskId,
+            'title' => $this->title,
+            'status' => $this->status,
+            'priority' => $this->priority,
+            'due_date' => $this->due_date
+        ]);
 
-        if (!$task)
-            return;
-
-        $this->isEditing = true;
-        $this->taskId = $taskId;
-        $this->title = $task->title;
-        $this->description = $task->description ?? '';
-        $this->type = $task->type ?? '';
-        $this->priority = $task->priority ?? '';
-        $this->status = $task->status;
-        $this->due_date = $task->due_date;
-        $this->url = $task->url ?? '';
-        $this->assignee_id = $task->assignee_id;
-
-        if ($task->tags->count() > 0) {
-            $this->tagsInput = $task->tags->pluck('name')->implode(', ');
-        }
-    }
-
-    public function save()
-    {
+        // Validate
         $this->validate([
             'title' => 'required|string|max:255',
-            'status' => 'required',
+            'status' => 'required|in:to_do,in_progress,in_review,published',
+            'priority' => 'nullable|in:low,medium,high',
+            'due_date' => 'nullable|date',
+            'url' => 'nullable|url',
         ]);
 
         try {
+            // Convert empty strings to null
+            $this->due_date = $this->due_date ?: null;
+            $this->assignee_id = $this->assignee_id ?: null;
+            $this->priority = $this->priority ?: null;
+            $this->type = $this->type ?: null;
+            $this->url = $this->url ?: null;
+
             if ($this->isEditing) {
+                // Check authorization for updating
+                if (!Gate::allows('updateTask', $this->board)) {
+                    session()->flash('error', 'You are not authorized to update this task.');
+                    return;
+                }
+
                 $task = Task::find($this->taskId);
+
+                if (!$task) {
+                    session()->flash('error', 'Task not found');
+                    $this->closeModal();
+                    return;
+                }
+
+                Log::info('Updating task', [
+                    'task_id' => $task->id,
+                    'data' => [
+                        'title' => $this->title,
+                        'description' => $this->description,
+                        'type' => $this->type,
+                        'priority' => $this->priority,
+                        'status' => $this->status,
+                        'due_date' => $this->due_date,
+                        'url' => $this->url,
+                        'assignee_id' => $this->assignee_id,
+                    ]
+                ]);
 
                 $task->update([
                     'title' => $this->title,
@@ -187,16 +225,16 @@ class TableView extends Component
 
                 $this->syncTags($task);
 
-                ActivityLog::log(
-                    $task->board_id,
-                    'Task',
-                    $task->id,
-                    'updated',
-                    auth()->user()->name . ' updated task "' . $task->title . '"'
-                );
 
+                Log::info('Task updated successfully', ['task_id' => $task->id]);
                 session()->flash('success', 'Task updated successfully!');
             } else {
+                // Check authorization for creating
+                if (!Gate::allows('createTask', $this->board)) {
+                    session()->flash('error', 'You are not authorized to create tasks.');
+                    return;
+                }
+
                 $maxOrder = Task::where('board_id', $this->boardId)
                     ->where('status', $this->status)
                     ->max('order') ?? -1;
@@ -217,23 +255,19 @@ class TableView extends Component
 
                 $this->syncTags($task);
 
-                ActivityLog::log(
-                    $this->boardId,
-                    'Task',
-                    $task->id,
-                    'created',
-                    auth()->user()->name . ' created task "' . $task->title . '"'
-                );
 
+                Log::info('Task created successfully', ['task_id' => $task->id]);
                 session()->flash('success', 'Task created successfully!');
             }
 
+            // Close modal and reset
             $this->closeModal();
-            $this->loadTasks();
 
         } catch (\Exception $e) {
-            \Log::error('Task save error: ' . $e->getMessage());
-            session()->flash('error', 'Failed to save task');
+            Log::error('Task save error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            session()->flash('error', 'Failed to save task: ' . $e->getMessage());
         }
     }
 
@@ -258,49 +292,69 @@ class TableView extends Component
         $task->tags()->sync($tagIds);
     }
 
-    public function confirmDelete()
+    public function showDeleteConfirmation($taskId = null)
     {
-        $this->showDeleteConfirm = true;
+        $this->deleteTaskId = $taskId ?? $this->taskId;
+
+        if ($this->showModal) {
+            $this->showModal = false;
+            $this->resetForm();
+        }
+
+        $this->showDeleteModal = true;
     }
 
-    public function deleteTask()
+    public function performDelete()
     {
         try {
-            $task = Task::find($this->taskId);
-
-            if ($task) {
-                ActivityLog::log(
-                    $this->boardId,
-                    'Task',
-                    null,
-                    'deleted',
-                    auth()->user()->name . ' deleted task "' . $task->title . '"'
-                );
-
-                $task->delete();
+            // Check authorization
+            if (!Gate::allows('deleteTask', $this->board)) {
+                session()->flash('error', 'You are not authorized to delete this task.');
+                return;
             }
 
-            $this->showDeleteConfirm = false;
-            $this->closeModal();
-            $this->loadTasks();
+            $task = Task::find($this->deleteTaskId);
 
+            if (!$task) {
+                session()->flash('error', 'Task not found');
+                $this->closeDeleteModal();
+                return;
+            }
+
+            $taskTitle = $task->title;
+            $boardId = $task->board_id;
+
+            $task->delete();
+
+            Log::info('Task deleted successfully', ['task_id' => $this->deleteTaskId]);
             session()->flash('success', 'Task deleted successfully!');
+
+            // Close modal
+            $this->closeDeleteModal();
+
         } catch (\Exception $e) {
-            \Log::error('Task delete error: ' . $e->getMessage());
-            session()->flash('error', 'Failed to delete task');
+            Log::error('Task deletion error: ' . $e->getMessage());
+            session()->flash('error', 'Failed to delete task: ' . $e->getMessage());
+            $this->closeDeleteModal();
         }
     }
 
     public function cancelDelete()
     {
-        $this->showDeleteConfirm = false;
+        $this->closeDeleteModal();
+    }
+
+    public function closeDeleteModal()
+    {
+        $this->showDeleteModal = false;
+        $this->deleteTaskId = null;
     }
 
     public function closeModal()
     {
         $this->showModal = false;
-        $this->showDeleteConfirm = false;
         $this->resetForm();
+        $this->resetValidation();
     }
 
     protected function resetForm()
@@ -316,12 +370,13 @@ class TableView extends Component
         $this->tagsInput = '';
         $this->isEditing = false;
         $this->taskId = null;
-        $this->resetErrorBag();
-        $this->resetValidation();
     }
 
     public function render()
     {
-        return view('livewire.table-view');
+        return view('livewire.table-view', [
+            'tasks' => $this->getTasks(),
+            'users' => $this->getUsers(),
+        ]);
     }
 }

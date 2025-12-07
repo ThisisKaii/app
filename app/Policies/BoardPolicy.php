@@ -20,6 +20,15 @@ class BoardPolicy
     }
 
     /**
+     * Determine if the user can view tasks on the board.
+     */
+    public function viewTasks(User $user, Board $board)
+    {
+        // Any board member can view tasks
+        return $board->members()->where('user_id', $user->id)->exists();
+    }
+
+    /**
      * Determine if the user can update the board.
      */
     public function update(User $user, Board $board)
@@ -65,6 +74,24 @@ class BoardPolicy
     public function createTask(User $user, Board $board)
     {
         // Any board member can create tasks
+        return $board->members()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Determine if the user can update tasks on the board.
+     */
+    public function updateTask(User $user, Board $board)
+    {
+        // Any board member can update tasks
+        return $board->members()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Determine if the user can delete tasks on the board.
+     */
+    public function deleteTask(User $user, Board $board)
+    {
+        // Any board member can delete tasks (you can make this more restrictive if needed)
         return $board->members()->where('user_id', $user->id)->exists();
     }
 }
