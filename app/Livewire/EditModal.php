@@ -44,6 +44,7 @@ class EditModal extends Component
         $this->resetForm();
 
         if ($taskId) {
+            // EDITING EXISTING TASK
             $task = Task::with('tags')->find($taskId);
             if (!$task)
                 return;
@@ -59,7 +60,9 @@ class EditModal extends Component
             $this->assignee_id = $task->assignee_id;
             $this->tagsInput = $task->tags->pluck('name')->implode(', ');
         } else {
+            // CREATING NEW TASK - Auto-assign to current user
             $this->taskStatus = $this->status;
+            $this->assignee_id = auth()->id(); // Automatically assign to creator
         }
 
         $this->showModal = true;
@@ -84,14 +87,22 @@ class EditModal extends Component
         ];
 
         if ($this->taskId) {
+            // UPDATING EXISTING TASK
             $task = Task::find($this->taskId);
             $task->update($data);
         } else {
+
             $data['board_id'] = $this->board->id;
             $data['user_id'] = auth()->id();
             $data['order'] = Task::where('board_id', $this->board->id)
                 ->where('status', $this->taskStatus)
                 ->max('order') + 1 ?? 0;
+
+            // If no assignee was selected, default to the creator
+            if (empty($data['assignee_id'])) {
+                $data['assignee_id'] = auth()->id();
+            }
+
             $task = Task::create($data);
         }
 
@@ -134,7 +145,7 @@ class EditModal extends Component
         $this->taskStatus = $this->status;
         $this->due_date = null;
         $this->url = '';
-        $this->assignee_id = null;
+        $this->assignee_id = null; // Will be set in openModal for new tasks
         $this->tagsInput = '';
         $this->resetValidation();
     }
