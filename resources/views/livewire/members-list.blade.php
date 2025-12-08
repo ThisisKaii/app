@@ -78,9 +78,6 @@
                         <tr wire:key="member-{{ $member->id }}" class="table-row">
                             <td>
                                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <div class="assignee-avatar">
-                                        {{ substr($member->name, 0, 1) }}
-                                    </div>
                                     <span class="task-title">{{ $member->name }}</span>
                                 </div>
                             </td>
