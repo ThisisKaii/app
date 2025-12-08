@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\Board;
+use App\Models\BudgetCategory;
 use Illuminate\Support\Facades\Auth;
 
 class BoardList extends Component
@@ -14,7 +15,7 @@ class BoardList extends Component
     public $deleteModalOpen = false;
     public $deleteBoardId;
     public $deleteBoardTitle;
-    
+
     // Rename modal properties
     public $renameModalOpen = false;
     public $renameBoardId;
@@ -161,6 +162,16 @@ class BoardList extends Component
         }
 
         $boards = $query->get();
+
+        // Add budget category counts for business boards
+        foreach ($boards as $board) {
+            if ($board->list_type === 'Business') {
+                // Get count of budget categories for this board
+                $board->budget_categories_count = BudgetCategory::whereHas('budget', function ($q) use ($board) {
+                    $q->where('board_id', $board->id);
+                })->count();
+            }
+        }
 
         return view('livewire.board-list', [
             'boards' => $boards

@@ -1,9 +1,5 @@
 <?php
 
-// ============================================
-// Board.php
-// ============================================
-
 namespace App\Models;
 
 use App\Traits\Loggable;
@@ -12,8 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 class Board extends Model
 {
     use Loggable;
-    
+
     protected $fillable = ['user_id', 'title', 'list_type'];
+
+    protected $casts = [
+        'list_type' => 'string',
+    ];
 
     public function user()
     {
@@ -44,52 +44,62 @@ class Board extends Model
     /**
      * Override to use board's own ID (boards don't have board_id)
      */
-    protected function getBoardId()
+    protected function getLogBoardId()
     {
         return $this->id;
     }
 
-    protected function getLoggableAttributes()
+    protected function getLoggableFields()
     {
         return ['title', 'list_type'];
     }
 
-    protected function getAttributeLabel($attribute)
+    protected function customCreatedDescription()
     {
-        return $attribute === 'list_type' ? 'List type' : parent::getAttributeLabel($attribute);
+        $type = $this->list_type === 'business' ? 'Business' : 'Normal';
+        return "Created {$type} board '{$this->title}'";
     }
 
-    protected function getCreatedDescription()
-    {
-        return "Created board '{$this->title}' ({$this->list_type})";
-    }
-
-    protected function getUpdatedDescription($changes)
+    protected function customUpdatedDescription($changes)
     {
         if (isset($changes['title']) && count($changes) === 1) {
             return "Renamed board from '{$changes['title']['old']}' to '{$changes['title']['new']}'";
         }
-        return parent::getUpdatedDescription($changes);
+
+        if (isset($changes['list_type']) && count($changes) === 1) {
+            $oldType = $changes['list_type']['old'] === 'business' ? 'Business' : 'Normal';
+            $newType = $changes['list_type']['new'] === 'business' ? 'Business' : 'Normal';
+            return "Changed board type from {$oldType} to {$newType}";
+        }
+
+        return $this->buildUpdateDescription($changes);
     }
 
-    protected function getDeletedDescription()
+    protected function customDeletedDescription()
     {
-        return "Deleted board '{$this->title}'";
+        $type = $this->list_type === 'business' ? 'Business' : 'Normal';
+        return "Deleted {$type} board '{$this->title}'";
     }
 
     // Custom logging methods for member management
     public function logMemberAdded($memberName, $role)
     {
-        return $this->logActivity('member_added', "Added {$memberName} as {$role}");
+        return $this->createLog('member_added', "Added {$memberName} as {$role}");
     }
 
     public function logMemberRemoved($memberName)
     {
-        return $this->logActivity('member_removed', "Removed {$memberName} from board");
+        return $this->createLog('member_removed', "Removed {$memberName} from board");
     }
 
     public function logRoleChanged($memberName, $oldRole, $newRole)
     {
-        return $this->logActivity('role_changed', "Changed {$memberName}'s role from {$oldRole} to {$newRole}");
+        return $this->createLog('role_changed', "Changed {$memberName}'s role from {$oldRole} to {$newRole}");
+    }
+
+    // Helper method to get formatted board type
+    public function getFormattedTypeAttribute()
+    {
+        return $this->list_type === 'business' ? 'Business' : 'Normal';
     }
 }
