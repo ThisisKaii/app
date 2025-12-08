@@ -17,7 +17,7 @@
         @elseif($currentView === 'table')
             @livewire('table-view', ['boardId' => $board->id], key('table-' . $board->id))
         @elseif($currentView === 'tasks')
-            @livewire('task-list', ['boardId' => $board->id], key('tasks-' . $board->id))
+            @livewire('tasks-list', ['boardId' => $board->id], key('tasks-' . $board->id))
         @elseif($currentView === 'members')
             @livewire('members-list', ['boardId' => $board->id], key('members-' . $board->id))
         @elseif($currentView === 'logs')
