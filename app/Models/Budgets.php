@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use App\Traits\Loggable;
@@ -13,56 +14,65 @@ class Budgets extends Model
         'total_budget',
     ];
 
+    protected $casts = [
+        'total_budget' => 'decimal:2',
+    ];
+
+    // Relationships
     public function board()
     {
         return $this->belongsTo(Board::class);
     }
 
-    public function budgetTasks()
+    public function budgetCategories()
     {
-        return $this->hasMany(BudgetCategory::class);
+        return $this->hasMany(BudgetCategory::class, 'budget_id')->orderBy('order');
     }
 
     // ============================================
     // Activity Logging Customization
     // ============================================
 
-    protected function getLoggableAttributes()
+    protected function getLoggableFields()
     {
         return ['total_budget'];
     }
 
-    protected function getAttributeLabel($attribute)
+    protected function customCreatedDescription()
     {
-        return $attribute === 'total_budget' ? 'Total budget' : parent::getAttributeLabel($attribute);
+        return "Set initial budget: $" . number_format($this->total_budget, 2);
     }
 
-    protected function formatValue($value)
-    {
-        // Format budget as currency
-        if (debug_backtrace()[1]['args'][0] ?? null === 'total_budget') {
-            return '$' . number_format($value, 2);
-        }
-        return parent::formatValue($value);
-    }
-
-    protected function getCreatedDescription()
-    {
-        return "Set initial budget: " . '$' . number_format($this->total_budget, 2);
-    }
-
-    protected function getUpdatedDescription($changes)
+    protected function customUpdatedDescription($changes)
     {
         if (isset($changes['total_budget'])) {
             $old = '$' . number_format($changes['total_budget']['old'], 2);
             $new = '$' . number_format($changes['total_budget']['new'], 2);
             return "Updated total budget from {$old} to {$new}";
         }
-        return parent::getUpdatedDescription($changes);
+        return $this->buildUpdateDescription($changes);
     }
 
-    protected function getDeletedDescription()
+    protected function customDeletedDescription()
     {
         return "Deleted budget (\$" . number_format($this->total_budget, 2) . ")";
+    }
+
+    // Helper methods
+    public function getTotalAllocated()
+    {
+        return $this->budgetCategories()->sum('amount_estimated');
+    }
+
+    public function getTotalSpent()
+    {
+        return $this->budgetCategories->sum(function ($category) {
+            return $category->getTotalSpent();
+        });
+    }
+
+    public function getRemainingBudget()
+    {
+        return $this->total_budget - $this->getTotalSpent();
     }
 }

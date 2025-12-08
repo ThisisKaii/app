@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('budget_category_id')->constrained()->onDelete('cascade');
-            $table->decimal('amount',  15,   2);
+            // FIXED: Changed from budget_task_id to budget_category_id to match ERD
+            $table->foreignId('budget_category_id')->constrained('budget_categories')->onDelete('cascade');
+            $table->decimal('amount', 15, 2);
             $table->text('description')->nullable();
             $table->timestamps();
         });
@@ -25,8 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('expenses', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('expenses');
     }
 };
