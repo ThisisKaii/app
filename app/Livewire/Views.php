@@ -3,41 +3,45 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use Livewire\Attributes\On;
+use App\Models\Board;
 
 class Views extends Component
 {
-    public $view;
-    public $boardId;
-    public $renderKey = 0;
+    public $board;
+    public $currentView = 'board';
 
-    public function mount($board)
+    protected $listeners = ['board-change' => 'changeView'];
+
+    public function mount(Board $board)
     {
-        $this->view = 'board';
-        $this->boardId = $board->id;
+        $this->board = $board;
+
+        // Set default view based on board type (with capitalized values)
+        if ($board->list_type === 'Business') {
+            $this->currentView = 'budget'; // Default to budget view for business boards
+        } else {
+            $this->currentView = 'board'; // Default to kanban board for normal boards
+        }
     }
 
-    #[On('board-change')]
     public function changeView($viewName)
     {
-        \Log::info('Changing view to: ' . $viewName);
-        
-        // Only change view if it's different from current view
-        if ($this->view !== $viewName) {
-            $this->view = $viewName;
-            $this->renderKey++;
-            
-            // Force Livewire to re-render
-            $this->dispatch('$refresh');
+        // Validate view based on board type (with capitalized values)
+        if ($this->board->list_type === 'Business') {
+            // Business boards can access: budget, table, members, logs
+            $allowedViews = ['budget', 'table', 'members', 'logs'];
         } else {
-            // If same view, do nothing - prevents the wire:key bug
-            \Log::info('Same view clicked, ignoring');
+            // Normal boards can access: board, table, tasks, members, logs
+            $allowedViews = ['board', 'table', 'tasks', 'members', 'logs'];
+        }
+
+        if (in_array($viewName, $allowedViews)) {
+            $this->currentView = $viewName;
         }
     }
 
     public function render()
     {
-        \Log::info('Current view: ' . $this->view . ', renderKey: ' . $this->renderKey);
         return view('livewire.views');
     }
 }

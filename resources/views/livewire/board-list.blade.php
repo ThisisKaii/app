@@ -30,20 +30,20 @@
                     All Boards
                 </button>
 
-                <button wire:click="setFilter('business')"
-                    class="filter-tab {{ $filterType === 'business' ? 'active' : '' }}">
+                <button wire:click="setFilter('Business')"
+                    class="filter-tab {{ $filterType === 'Business' ? 'active' : '' }}">
                     <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                     Business
                 </button>
 
-                <button wire:click="setFilter('normal')"
-                    class="filter-tab {{ $filterType === 'normal' ? 'active' : '' }}">
+                <button wire:click="setFilter('Normal')"
+                    class="filter-tab {{ $filterType === 'Normal' ? 'active' : '' }}">
                     <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                     </svg>
                     Normal
                 </button>
@@ -64,6 +64,19 @@
                     $memberCount = $board->members()->count();
                     $userMember = $board->members()->where('user_id', auth()->id())->first();
                     $userRole = $userMember ? $userMember->pivot->role : 'member';
+
+                    // Get appropriate count based on board type
+                    if ($board->list_type === 'Business') {
+                        $itemCount = \App\Models\BudgetCategory::whereHas('budget', function ($q) use ($board) {
+                            $q->where('board_id', $board->id);
+                        })->count();
+                        $itemLabel = 'category';
+                        $itemIcon = 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10';
+                    } else {
+                        $itemCount = $board->tasks_count;
+                        $itemLabel = 'task';
+                        $itemIcon = 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4';
+                    }
                 @endphp
 
                 <a href="{{ route('boards.show', $board) }}" class="board-card" wire:key="board-{{ $board->id }}">
@@ -72,16 +85,16 @@
                     <div class="board-card-header">
                         <!-- Type badge -->
                         <div class="board-type-badge board-type-{{ $board->list_type }}">
-                            @if($board->list_type === 'business')
+                            @if($board->list_type === 'Business')
                                 <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                                 </svg>
                                 Business
                             @else
                                 <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                                 </svg>
                                 Normal
                             @endif
@@ -134,10 +147,9 @@
                     <div class="board-card-stats">
                         <div class="stat-item">
                             <svg class="stat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $itemIcon }}" />
                             </svg>
-                            <span>{{ $board->tasks_count }} {{ Str::plural('task', $board->tasks_count) }}</span>
+                            <span>{{ $itemCount }} {{ Str::plural($itemLabel, $itemCount) }}</span>
                         </div>
 
                         <div class="stat-item">
@@ -216,8 +228,7 @@
                         </svg>
                     </div>
                     <p class="modal-text">Are you sure you want to delete "<strong>{{ $deleteBoardTitle }}</strong>"?</p>
-                    <p class="modal-subtext">This action cannot be undone. All tasks and data will be permanently removed.
-                    </p>
+                    <p class="modal-subtext">This action cannot be undone. All data will be permanently removed.</p>
                 </div>
 
                 <div class="modal-footer">
