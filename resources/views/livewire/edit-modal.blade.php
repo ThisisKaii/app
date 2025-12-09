@@ -18,7 +18,8 @@
                     @php
                         $dueDate = \Carbon\Carbon::parse($task->due_date);
                         $isOverdue = $dueDate->isPast();
-                        $isDueSoon = !$isOverdue && $dueDate->diffInDays(now()) <= 3;
+                        $daysUntilDue = now()->diffInDays($dueDate, false);
+                        $isDueSoon = !$isOverdue && $daysUntilDue >= 0 && $daysUntilDue <= 3;
                         
                         if ($isOverdue) {
                             $bgColor = 'rgba(239, 68, 68, 0.15)';
