@@ -366,7 +366,7 @@ class TableView extends Component
         $this->status = 'to_do';
         $this->due_date = null;
         $this->url = '';
-        $this->assignee_id = null;
+        $this->assignee_id = auth()->id();
         $this->tagsInput = '';
         $this->isEditing = false;
         $this->taskId = null;

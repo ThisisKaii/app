@@ -37,11 +37,14 @@ class BudgetCategoryModal extends Component
     public $showDeleteExpenseModal = false;
     public $deleteExpenseId = null;
 
-    protected $listeners = [
-        'open-category-modal-{status}' => 'openCategoryModal',
-        'category-updated' => 'loadCategories',
-        'refresh-categories' => 'loadCategories',
-    ];
+    public function getListeners()
+    {
+        return [
+            "open-category-modal-{$this->status}" => 'openCategoryModal',
+            'category-updated' => 'loadCategories',
+            'refresh-categories' => 'loadCategories',
+        ];
+    }
 
     public function mount(Budgets $budget, $status, Board $board)
     {
@@ -66,6 +69,11 @@ class BudgetCategoryModal extends Component
 
     public function openCategoryModal($categoryId = null)
     {
+        // Handle array payload (common in Livewire event dispatch)
+        if (is_array($categoryId)) {
+            $categoryId = $categoryId['categoryId'] ?? null;
+        }
+
         // Check authorization
         if (!Gate::allows('createTask', $this->board)) {
             session()->flash('error', 'You are not authorized to manage categories.');
