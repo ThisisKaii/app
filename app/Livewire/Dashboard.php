@@ -21,6 +21,9 @@ class Dashboard extends Component
     // Dashboard data
     public $dashboardData = [];
 
+    // Modal state
+    public $showAllTransactions = false;
+
     public function mount(Board $board)
     {
         Gate::authorize('viewTasks', $board);
@@ -66,6 +69,8 @@ class Dashboard extends Component
         } else {
             $this->loadNormalDashboard();
         }
+
+        $this->dispatch('dashboard-updated', data: $this->dashboardData);
     }
 
     protected function loadNormalDashboard()
@@ -120,12 +125,18 @@ class Dashboard extends Component
         })->count();
 
         // Team activity
-        $assigneeStats = $tasks->groupBy('assignee_id')
+        $assigneeStats = $tasks->whereNotNull('assignee_id')
+            ->groupBy('assignee_id')
             ->map(function ($group) {
+                $total = $group->count();
+                $completed = $group->where('status', 'published')->count();
+                $assignee = $group->first()->assignee;
                 return [
-                    'assignee' => $group->first()->assignee?->name ?? 'Unassigned',
-                    'total' => $group->count(),
-                    'completed' => $group->where('status', 'published')->count(),
+                    'assignee' => $assignee->name,
+                    'is_active' => $assignee->is_active ?? false,
+                    'total' => $total,
+                    'completed' => $completed,
+                    'percentage' => $total > 0 ? round(($completed / $total) * 100) : 0,
                 ];
             })
             ->sortByDesc('completed')
@@ -274,6 +285,17 @@ class Dashboard extends Component
             ];
         }
 
+        // Calculate Spending Trend (Last Month vs Previous)
+        $currentMonthSpent = $monthlyTrend[5]['spent']; // Index 5 is current month
+        $lastMonthSpent = $monthlyTrend[4]['spent']; // Index 4 is previous month
+        
+        $spendingTrend = 0;
+        if ($lastMonthSpent > 0) {
+            $spendingTrend = round((($currentMonthSpent - $lastMonthSpent) / $lastMonthSpent) * 100, 1);
+        } elseif ($currentMonthSpent > 0) {
+            $spendingTrend = 100; // 0 to something is 100% increase
+        }
+
         // Recent expenses (last 10)
         $allExpenses = collect();
         foreach ($categories as $category) {
@@ -320,7 +342,13 @@ class Dashboard extends Component
             'largestExpenses' => $largestExpenses,
             'totalExpenses' => $totalExpenses,
             'burnRate' => $burnRate,
+            'spendingTrend' => $spendingTrend,
         ];
+    }
+
+    public function toggleAllTransactions()
+    {
+        $this->showAllTransactions = !$this->showAllTransactions;
     }
 
     public function render()

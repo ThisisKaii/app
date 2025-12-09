@@ -56,7 +56,7 @@
                                             $isDueSoon = $dueDate->diffInDays($today) <= 3 && !$isOverdue;
                                         @endphp
                                         <span class="due-date-badge {{ $isOverdue ? 'overdue' : ($isDueSoon ? 'due-soon' : '') }}">
-                                            📅 {{ $dueDate->format('M d') }}
+                                            {{ $dueDate->format('M d') }}
                                         </span>
                                     @endif
 
@@ -69,7 +69,7 @@
                             </div>
                         @empty
                             <div class="empty-state">
-                                <div class="empty-state-icon">📭</div>
+                                <div class="empty-state-icon"></div>
                                 <div>No tasks assigned</div>
                             </div>
                         @endforelse
@@ -95,7 +95,7 @@
                     <div class="team-member-info">
                         <div class="team-member-avatar"
                             style="background: linear-gradient(135deg, #6e7681 0%, #484f58 100%);">
-                            📌
+                            
                         </div>
                         <div class="team-member-details">
                             <div class="team-member-name">
@@ -138,7 +138,7 @@
                                         $isDueSoon = $dueDate->diffInDays($today) <= 3 && !$isOverdue;
                                     @endphp
                                     <span class="due-date-badge {{ $isOverdue ? 'overdue' : ($isDueSoon ? 'due-soon' : '') }}">
-                                        📅 {{ $dueDate->format('M d') }}
+                                        {{ $dueDate->format('M d') }}
                                     </span>
                                 @endif
 
