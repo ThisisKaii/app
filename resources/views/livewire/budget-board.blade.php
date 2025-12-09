@@ -1,5 +1,4 @@
-
-<div wire:poll.10s>
+<div wire:poll.10s.keep-alive>
     <!-- Main Content -->
     <div class="container">
         <!-- Budget Summary Header -->
@@ -58,7 +57,7 @@
 
             <!-- Modern Progress Bar -->
             @if($budget->total_budget > 0)
-                <div class="budget-board-container" wire:poll.10s>
+                <div class="budget-progress-container">
                     <div class="budget-progress-bar">
                         <div class="progress-fill allocated-fill"
                             style="width: {{ min(100, ($totalAllocated / $budget->total_budget) * 100) }}%">
@@ -80,7 +79,7 @@
         </div>
 
         <!-- Budget Categories Board (Kanban Style) -->
-        <div id="budget-board" class="kanban-container">
+        <div id="budget-board" class="kanban-container" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.5rem; overflow-x: auto;">
             @php
                 $statusConfig = [
                     'draft' => ['label' => 'Draft', 'badge' => 'draft-badge'],
