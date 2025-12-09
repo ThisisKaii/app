@@ -68,9 +68,4 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
-    public function isOnline()
-    {
-        return cache()->has('user-online-' . $this->id);
-    }
-
 }

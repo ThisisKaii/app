@@ -1,3 +1,4 @@
+<!-- Budget Category Modal View -->
 <div>
     <!-- Category Cards -->
     @foreach($categories as $category)
@@ -7,9 +8,10 @@
             $progress = $category->getProgressPercentage();
         @endphp
 
-        <div wire:key="category-{{ $category->id }}" class="budget-category-card"
+        <div wire:key="category-{{ $category->id }}" class="budget-category-card" draggable="true"
+            data-category-id="{{ $category->id }}"
             wire:click.stop="$dispatch('open-category-modal-{{ $status }}', { categoryId: {{ $category->id }} })">
-            
+
             <!-- Category Header -->
             <div class="category-card-header">
                 <h3 class="category-title">{{ $category->title }}</h3>
@@ -37,8 +39,9 @@
             <!-- Progress Bar -->
             <div class="category-progress">
                 <div class="progress-bar-small">
-                    <div class="progress-fill-small" style="width: {{ min(100, $progress) }}%; 
-                        background-color: {{ $progress > 100 ? '#ef4444' : ($progress > 80 ? '#f59e0b' : '#22c55e') }}">
+                    <div class="progress-fill-small"
+                        style="width: {{ min(100, $progress) }}%; 
+                            background-color: {{ $progress > 100 ? '#ef4444' : ($progress > 80 ? '#f59e0b' : '#22c55e') }}">
                     </div>
                 </div>
                 <span class="progress-text">{{ number_format($progress, 0) }}%</span>
@@ -57,8 +60,7 @@
                 @if($category->description)
                     <span class="has-description" title="{{ $category->description }}">
                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6h16M4 12h16M4 18h7" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
                         </svg>
                     </span>
                 @endif
@@ -76,7 +78,7 @@
         <div class="modal-overlay" wire:click.self="closeCategoryModal">
             <div class="modal-content budget-modal" wire:click.stop>
                 <div class="modal-header">
-                    <h2>{{ $categoryId ? 'Edit Category' : 'New Category' }}</h2>
+                    <h2>{{ $categoryId ? '✏️ Edit Category' : '➕ New Category' }}</h2>
                     <button type="button" wire:click="closeCategoryModal" class="modal-close">&times;</button>
                 </div>
 
@@ -109,11 +111,11 @@
                             <div class="form-group">
                                 <label>Status</label>
                                 <select wire:model="categoryStatus">
-                                    <option value="draft">Draft</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="approved">Approved</option>
-                                    <option value="rejected">Rejected</option>
-                                    <option value="completed">Completed</option>
+                                    <option value="draft">📝 Draft</option>
+                                    <option value="pending">⏳ Pending</option>
+                                    <option value="approved">✅ Approved</option>
+                                    <option value="rejected">❌ Rejected</option>
+                                    <option value="completed">🎉 Completed</option>
                                 </select>
                             </div>
                         </div>
@@ -134,7 +136,7 @@
                             @if($category && $category->expenses->count() > 0)
                                 <div class="expenses-section">
                                     <div class="expenses-header">
-                                        <h3>Expenses</h3>
+                                        <h3>💰 Expenses</h3>
                                         <button type="button" class="btn-sm btn-primary"
                                             wire:click.prevent="openExpenseModal({{ $categoryId }})">
                                             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,8 +167,7 @@
                                                         </svg>
                                                     </button>
                                                     <button type="button" class="btn-icon btn-danger"
-                                                        wire:click.prevent="confirmDeleteExpense({{ $expense->id }})"
-                                                        title="Delete">
+                                                        wire:click.prevent="confirmDeleteExpense({{ $expense->id }})" title="Delete">
                                                         <svg width="16" height="16" fill="none" stroke="currentColor"
                                                             viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -194,7 +195,7 @@
                         @if($categoryId)
                             <button type="button" wire:click="confirmDeleteCategory({{ $categoryId }})" class="btn-delete"
                                 wire:loading.attr="disabled">
-                                Delete Category
+                                🗑️ Delete Category
                             </button>
                         @else
                             <div></div>
@@ -204,7 +205,7 @@
                             <button type="button" wire:click="closeCategoryModal" class="btn-cancel">Cancel</button>
                             <button type="submit" class="btn-submit" wire:loading.attr="disabled">
                                 <span wire:loading.remove
-                                    wire:target="saveCategory">{{ $categoryId ? 'Save Changes' : 'Create Category' }}</span>
+                                    wire:target="saveCategory">{{ $categoryId ? '💾 Save Changes' : '✨ Create Category' }}</span>
                                 <span wire:loading wire:target="saveCategory">Saving...</span>
                             </button>
                         </div>
@@ -219,7 +220,7 @@
         <div class="modal-overlay" wire:click.self="closeExpenseModal">
             <div class="modal-content small-modal" wire:click.stop>
                 <div class="modal-header">
-                    <h2>{{ $expenseId ? 'Edit Expense' : 'New Expense' }}</h2>
+                    <h2>{{ $expenseId ? '✏️ Edit Expense' : '➕ New Expense' }}</h2>
                     <button type="button" wire:click="closeExpenseModal" class="modal-close">&times;</button>
                 </div>
 
@@ -251,7 +252,7 @@
                         <button type="button" wire:click="closeExpenseModal" class="btn-cancel">Cancel</button>
                         <button type="submit" class="btn-submit" wire:loading.attr="disabled">
                             <span wire:loading.remove
-                                wire:target="saveExpense">{{ $expenseId ? 'Save Changes' : 'Add Expense' }}</span>
+                                wire:target="saveExpense">{{ $expenseId ? '💾 Save Changes' : '✨ Add Expense' }}</span>
                             <span wire:loading wire:target="saveExpense">Saving...</span>
                         </button>
                     </div>
@@ -264,7 +265,7 @@
     @if($showDeleteCategoryModal)
         <div class="modal-overlay delete-overlay" wire:click.self="closeDeleteCategoryModal">
             <div class="delete-confirmation" wire:click.stop>
-                <h2>Confirm Delete</h2>
+                <h2>⚠️ Confirm Delete</h2>
                 <p>Are you sure you want to delete this category? All expenses within it will also be deleted. This action
                     cannot be undone.</p>
 
@@ -287,7 +288,7 @@
     @if($showDeleteExpenseModal)
         <div class="modal-overlay delete-overlay" wire:click.self="closeDeleteExpenseModal">
             <div class="delete-confirmation" wire:click.stop>
-                <h2>Confirm Delete</h2>
+                <h2>⚠️ Confirm Delete</h2>
                 <p>Are you sure you want to delete this expense? This action cannot be undone.</p>
 
                 <div class="delete-actions">

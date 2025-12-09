@@ -1,10 +1,12 @@
 <div>
-    @if($board->list_type === 'Business')
+    @if($board->list_type === 'business')
         {{-- Business Board Views --}}
         @if($currentView === 'budget')
-            @livewire('budget-board', ['boardId' => $board->id], key('budget-board-' . $board->id))
+            @livewire('budget-board', ['board' => $board], key('budget-board-' . $board->id))
         @elseif($currentView === 'table')
             @livewire('budget-table-view', ['boardId' => $board->id], key('budget-table-' . $board->id))
+        @elseif($currentView === 'dashboard')
+            @livewire('dashboard', ['board' => $board], key('dashboard-' . $board->id))
         @elseif($currentView === 'members')
             @livewire('members-list', ['boardId' => $board->id], key('members-' . $board->id))
         @elseif($currentView === 'logs')
@@ -18,6 +20,8 @@
             @livewire('table-view', ['boardId' => $board->id], key('table-' . $board->id))
         @elseif($currentView === 'tasks')
             @livewire('tasks-list', ['boardId' => $board->id], key('tasks-' . $board->id))
+        @elseif($currentView === 'dashboard')
+            @livewire('dashboard', ['board' => $board], key('dashboard-' . $board->id))
         @elseif($currentView === 'members')
             @livewire('members-list', ['boardId' => $board->id], key('members-' . $board->id))
         @elseif($currentView === 'logs')

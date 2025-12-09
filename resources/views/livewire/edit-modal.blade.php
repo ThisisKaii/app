@@ -1,3 +1,5 @@
+
+<!-- Edit modal -->
 <div>
     @foreach($tasks as $task)
         <div wire:key="task-{{ $task->id }}" 
