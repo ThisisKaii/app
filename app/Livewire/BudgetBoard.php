@@ -17,7 +17,8 @@ class BudgetBoard extends Component
 
     // Budget Modal
     public $showBudgetModal = false;
-    public $totalBudget = '';
+    public $totalBudget = 0;
+    public $formattedTotalBudget = '';
 
     protected $listeners = [
         'budget-updated' => 'loadBudget',
@@ -29,7 +30,7 @@ class BudgetBoard extends Component
     {
         $this->boardId = $boardId;
         $this->board = Board::findOrFail($boardId);
-        
+
         // Ensure this is a business board
         if ($this->board->list_type !== 'Business') {
             abort(403, 'This board is not a budget board');
@@ -59,27 +60,41 @@ class BudgetBoard extends Component
 
     public function openBudgetModal()
     {
-        // Check authorization - use 'update' policy instead of 'updateTask'
+        // Check authorization
         if (!Gate::allows('update', $this->board)) {
             session()->flash('error', 'You are not authorized to update the budget.');
             return;
         }
 
-        // Format the number without thousands separator
-        $this->totalBudget = number_format($this->budget->total_budget, 2, '.', '');
+        $this->totalBudget = $this->budget->total_budget;
+        $this->formattedTotalBudget = number_format($this->budget->total_budget, 2, '.', '');
         $this->showBudgetModal = true;
-        
-        // Force Livewire to re-render
-        $this->dispatch('budget-modal-opened');
     }
 
     public function saveBudget()
     {
+        // Convert formatted string back to float
+        $this->totalBudget = floatval(str_replace(',', '', $this->totalBudget));
+
         $this->validate([
-            'totalBudget' => 'required|numeric|min:0|max:999999999.99',
+            'totalBudget' => ['required', 'numeric', 'min:0.01', 'max:999999999.99'],
         ]);
 
         try {
+            // Check if new budget covers existing allocations
+            $totalAllocated = $this->budget->getTotalAllocated();
+            $totalSpent = $this->budget->getTotalSpent();
+
+            if ($this->totalBudget < $totalAllocated) {
+                session()->flash('error', 'Budget cannot be less than allocated amount ($' . number_format($totalAllocated, 2) . ')');
+                return;
+            }
+
+            if ($this->totalBudget < $totalSpent) {
+                session()->flash('error', 'Budget cannot be less than spent amount ($' . number_format($totalSpent, 2) . ')');
+                return;
+            }
+
             $this->budget->update([
                 'total_budget' => $this->totalBudget
             ]);
@@ -87,9 +102,10 @@ class BudgetBoard extends Component
             session()->flash('success', 'Budget updated successfully!');
             $this->closeBudgetModal();
             $this->loadBudget();
-            
+
             // Dispatch event to refresh other components
             $this->dispatch('budget-updated');
+
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to update budget: ' . $e->getMessage());
         }
@@ -98,15 +114,23 @@ class BudgetBoard extends Component
     public function closeBudgetModal()
     {
         $this->showBudgetModal = false;
-        $this->totalBudget = '';
+        $this->totalBudget = 0;
+        $this->formattedTotalBudget = '';
         $this->resetValidation();
+    }
+
+    public function updatedTotalBudget($value)
+    {
+        // Format the input as user types
+        if (is_numeric(str_replace(',', '', $value))) {
+            $this->totalBudget = floatval(str_replace(',', '', $value));
+        }
     }
 
     public function render()
     {
-        // Recalculate on each render to ensure fresh data
         $this->loadCategories();
-        
+
         $totalAllocated = $this->budget->getTotalAllocated();
         $totalSpent = $this->budget->getTotalSpent();
         $remaining = $this->budget->getRemainingBudget();

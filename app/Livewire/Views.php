@@ -29,10 +29,10 @@ class Views extends Component
         // Validate view based on board type (with capitalized values)
         if ($this->board->list_type === 'Business') {
             // Business boards can access: budget, table, members, logs
-            $allowedViews = ['budget', 'table', 'members', 'logs'];
+            $allowedViews = ['budget', 'table', 'members', 'logs','dashboard'];
         } else {
             // Normal boards can access: board, table, tasks, members, logs
-            $allowedViews = ['board', 'table', 'tasks', 'members', 'logs'];
+            $allowedViews = ['board', 'table', 'tasks', 'members', 'logs','dashboard'];
         }
 
         if (in_array($viewName, $allowedViews)) {

@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\BudgetCategoryController;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 
@@ -73,8 +74,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/todobido', [TaskController::class, 'store'])->name('tasks.store');
     Route::patch('/todobido/{task}', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
     Route::get('/todobido', function () {
-    return view('/todobido');
-});
+        return view('/todobido');
+    });
+    Route::patch('/todobido/budget-category/{category}', [BudgetCategoryController::class, 'updateStatus'])
+        ->name('budget-categories.updateStatus');
 });
 #
 
@@ -83,7 +86,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/boards', [BoardController::class, 'store'])->name('boards.store');
     Route::patch('/boards/{board}', [BoardController::class, 'update'])->name('boards.update');
     Route::delete('/boards/{board}', [BoardController::class, 'destroy'])->name('boards.destroy');
-    
+
     // Task management
     Route::patch('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
