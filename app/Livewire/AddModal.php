@@ -26,6 +26,7 @@ class AddModal extends Component
     public $priority = '';
     public $due_date = '';
     public $url = '';
+    public $assignee_id = null;
 
 
     public function mount($boardId, $status)
@@ -41,6 +42,12 @@ class AddModal extends Component
         ];
     }
 
+    public function getUsersProperty()
+    {
+        $board = \App\Models\Board::find($this->boardId);
+        return $board ? $board->members()->orderBy('name')->get() : collect([]);
+    }
+
     public function openModal($taskId = null)
     {
         // Prevent multiple opens
@@ -53,6 +60,9 @@ class AddModal extends Component
         $this->type = '';
         $this->priority = '';
         $this->due_date = '';
+        
+        // Default to current user for new tasks
+        $this->assignee_id = auth()->id();
 
         $this->taskId = null;
         $this->isEditing = false;
@@ -82,6 +92,7 @@ class AddModal extends Component
         $this->type = $task->type ?? '';
         $this->priority = $task->priority ?? '';
         $this->due_date = $task->due_date ? $task->due_date->format('Y-m-d') : '';
+        $this->assignee_id = $task->assignee_id;
     }
 
     public function save()
@@ -91,6 +102,7 @@ class AddModal extends Component
             'type' => 'nullable|string|max:50',
             'priority' => 'nullable|in:low,medium,high',
             'due_date' => 'nullable|date',
+            'assignee_id' => 'nullable|exists:users,id',
         ]);
 
         // Convert empty fields to null
@@ -102,6 +114,9 @@ class AddModal extends Component
         }
         if (empty($validated['type'])) {
             $validated['type'] = null;
+        }
+        if (empty($validated['assignee_id'])) {
+            $validated['assignee_id'] = null;
         }
 
         if ($this->isEditing && $this->taskId) {

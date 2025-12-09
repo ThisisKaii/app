@@ -9,10 +9,15 @@ use Illuminate\Support\Facades\Auth;
 class Individual extends Component
 {
     public $myTasks;
+    public $boardId;
 
-    public function mount()
+    public function mount($boardId)
     {
-        $this->myTasks = Task::where('assignee_id', Auth::id())->orderBy('created_at', 'desc')->get();
+        $this->boardId = $boardId;
+        $this->myTasks = Task::where('assignee_id', Auth::id())
+            ->where('board_id', $this->boardId)
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
     public function render()
     {

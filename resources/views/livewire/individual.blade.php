@@ -8,15 +8,15 @@
                 </div>
                 <div class="tasks-stats">
                     <div class="stat-item">
-                        <div class="stat-value">{{ $myTasks->where('status', 'todo')->count() }}</div>
+                        <div class="stat-value">{{ $myTasks->where('status', 'to_do')->count() }}</div>
                         <div class="stat-label">To Do</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">{{ $myTasks->where('status', 'progress')->count() }}</div>
+                        <div class="stat-value">{{ $myTasks->where('status', 'in_progress')->count() }}</div>
                         <div class="stat-label">In Progress</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">{{ $myTasks->where('status', 'completed')->count() + $myTasks->where('status', 'published')->count() }}</div>
+                        <div class="stat-value">{{ $myTasks->where('status', 'published')->count() }}</div>
                         <div class="stat-label">Completed</div>
                     </div>
                 </div>
@@ -26,7 +26,7 @@
                 <!-- Priority Section -->
                 <div class="task-section">
                     <div class="section-header">
-                        <span class="section-icon">🔥</span>
+                        <span class="section-icon"></span>
                         <span class="section-title">High Priority</span>
                         <span class="section-count">{{ $myTasks->where('priority', 'high')->where('status', '!=', 'published')->count() }}</span>
                     </div>
@@ -34,13 +34,21 @@
                         @forelse($myTasks->where('priority', 'high')->where('status', '!=', 'published')->take(5) as $task)
                             <div class="personal-task-card priority-high">
                                 <div class="task-checkbox">
-                                    <input type="checkbox" {{ in_array($task->status, ['completed', 'published']) ? 'checked' : '' }}>
+                                    <input type="checkbox" {{ $task->status === 'published' ? 'checked' : '' }}>
                                 </div>
                                 <div class="task-content">
                                     <div class="task-main-row">
                                         <div class="task-title-row">
                                             <span class="task-title">{{ $task->title }}</span>
-                                            <span class="task-status-pill status-{{ $task->status }}">
+                                            @php
+                                                $statusClass = match($task->status) {
+                                                    'to_do' => 'todo',
+                                                    'in_progress' => 'progress',
+                                                    'in_review' => 'review',
+                                                    default => $task->status
+                                                };
+                                            @endphp
+                                            <span class="task-status-pill status-{{ $statusClass }}">
                                                 {{ str_replace('_', ' ', ucfirst($task->status)) }}
                                             </span>
                                         </div>
@@ -49,7 +57,7 @@
                                         <div class="task-meta-row">
                                             @if($task->due_date)
                                                 <span class="task-due {{ \Carbon\Carbon::parse($task->due_date)->isPast() ? 'overdue' : '' }}">
-                                                    📅 {{ \Carbon\Carbon::parse($task->due_date)->format('M d, Y') }}
+                                                    {{ \Carbon\Carbon::parse($task->due_date)->format('M d, Y') }}
                                                 </span>
                                             @endif
                                             @if($task->description)
@@ -74,7 +82,7 @@
                 <!-- Today / Upcoming Section -->
                 <div class="task-section">
                     <div class="section-header">
-                        <span class="section-icon">📅</span>
+                        <span class="section-icon"></span>
                         <span class="section-title">Due Soon</span>
                         <span class="section-count">{{ $myTasks->where('due_date', '!=', null)->where('status', '!=', 'published')->count() }}</span>
                     </div>
@@ -82,20 +90,28 @@
                         @forelse($myTasks->where('due_date', '!=', null)->where('status', '!=', 'published')->sortBy('due_date')->take(5) as $task)
                             <div class="personal-task-card">
                                 <div class="task-checkbox">
-                                    <input type="checkbox" {{ in_array($task->status, ['completed', 'published']) ? 'checked' : '' }}>
+                                    <input type="checkbox" {{ $task->status === 'published' ? 'checked' : '' }}>
                                 </div>
                                 <div class="task-content">
                                     <div class="task-main-row">
                                         <div class="task-title-row">
                                             <span class="task-title">{{ $task->title }}</span>
-                                            <span class="task-status-pill status-{{ $task->status }}">
+                                            @php
+                                                $statusClass = match($task->status) {
+                                                    'to_do' => 'todo',
+                                                    'in_progress' => 'progress',
+                                                    'in_review' => 'review',
+                                                    default => $task->status
+                                                };
+                                            @endphp
+                                            <span class="task-status-pill status-{{ $statusClass }}">
                                                 {{ str_replace('_', ' ', ucfirst($task->status)) }}
                                             </span>
                                         </div>
                                     </div>
                                     <div class="task-meta-row">
                                         <span class="task-due {{ \Carbon\Carbon::parse($task->due_date)->isPast() ? 'overdue' : '' }}">
-                                            📅 {{ \Carbon\Carbon::parse($task->due_date)->format('M d, Y') }}
+                                            {{ \Carbon\Carbon::parse($task->due_date)->format('M d, Y') }}
                                             @if(\Carbon\Carbon::parse($task->due_date)->isToday())
                                                 <span class="due-today-badge">Today</span>
                                             @elseif(\Carbon\Carbon::parse($task->due_date)->isTomorrow())
@@ -119,12 +135,12 @@
                 <!-- All Active Tasks -->
                 <div class="task-section">
                     <div class="section-header">
-                        <span class="section-icon">📋</span>
+                        <span class="section-icon"></span>
                         <span class="section-title">All Active Tasks</span>
-                        <span class="section-count">{{ $myTasks->whereIn('status', ['todo', 'in_progress', 'progress', 'review', 'in_review'])->count() }}</span>
+                        <span class="section-count">{{ $myTasks->whereIn('status', ['to_do', 'in_progress', 'in_review'])->count() }}</span>
                     </div>
                     <div class="task-list">
-                        @forelse($myTasks->whereIn('status', ['todo', 'in_progress', 'progress', 'review', 'in_review'])->sortByDesc('created_at')->take(8) as $task)
+                        @forelse($myTasks->whereIn('status', ['to_do', 'in_progress', 'in_review'])->sortByDesc('created_at')->take(8) as $task)
                             <div class="personal-task-card">
                                 <div class="task-checkbox">
                                     <input type="checkbox">
@@ -133,7 +149,15 @@
                                     <div class="task-main-row">
                                         <div class="task-title-row">
                                             <span class="task-title">{{ $task->title }}</span>
-                                            <span class="task-status-pill status-{{ $task->status }}">
+                                            @php
+                                                $statusClass = match($task->status) {
+                                                    'to_do' => 'todo',
+                                                    'in_progress' => 'progress',
+                                                    'in_review' => 'review',
+                                                    default => $task->status
+                                                };
+                                            @endphp
+                                            <span class="task-status-pill status-{{ $statusClass }}">
                                                 {{ str_replace('_', ' ', ucfirst($task->status)) }}
                                             </span>
                                         </div>
@@ -141,7 +165,7 @@
                                     <div class="task-meta-row">
                                         @if($task->due_date)
                                             <span class="task-due">
-                                                📅 {{ \Carbon\Carbon::parse($task->due_date)->format('M d, Y') }}
+                                                {{ \Carbon\Carbon::parse($task->due_date)->format('M d, Y') }}
                                             </span>
                                         @endif
                                         @if($task->priority)
@@ -156,9 +180,9 @@
                             <div class="empty-section">No active tasks</div>
                         @endforelse
                         
-                        @if($myTasks->whereIn('status', ['todo', 'in_progress', 'progress', 'review', 'in_review'])->count() > 8)
+                        @if($myTasks->whereIn('status', ['to_do', 'in_progress', 'in_review'])->count() > 8)
                             <button class="show-more-inline">
-                                + {{ $myTasks->whereIn('status', ['todo', 'in_progress', 'progress', 'review', 'in_review'])->count() - 8 }} more tasks
+                                + {{ $myTasks->whereIn('status', ['to_do', 'in_progress', 'in_review'])->count() - 8 }} more tasks
                             </button>
                         @endif
                     </div>

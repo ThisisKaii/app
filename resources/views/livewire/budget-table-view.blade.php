@@ -1,4 +1,4 @@
-<div class="table-container">
+<div class="table-container" wire:poll.10s>
     <!-- Budget Summary Header -->
     <div class="budget-summary-header-compact">
         <div class="summary-stats">
@@ -117,9 +117,7 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="status-badge status-{{ $category->status }}">
-                                    {{ ucfirst($category->status) }}
-                                </span>
+                                <span class="status-text">{{ ucfirst($category->status) }}</span>
                             </td>
                             <td>
                                 <span class="amount-text estimated">${{ number_format($category->amount_estimated, 2) }}</span>

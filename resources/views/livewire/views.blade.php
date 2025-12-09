@@ -1,8 +1,8 @@
 <div>
-    @if($board->list_type === 'business')
+    @if($board->list_type === 'Business')
         {{-- Business Board Views --}}
         @if($currentView === 'budget')
-            @livewire('budget-board', ['board' => $board], key('budget-board-' . $board->id))
+            @livewire('budget-board', ['boardId' => $board->id], key('budget-board-' . $board->id))
         @elseif($currentView === 'table')
             @livewire('budget-table-view', ['boardId' => $board->id], key('budget-table-' . $board->id))
         @elseif($currentView === 'dashboard')

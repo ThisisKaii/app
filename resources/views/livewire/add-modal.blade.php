@@ -56,6 +56,18 @@
                                 onclick="this.showPicker()">
                         </div>
 
+                        <!-- Assignee -->
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; color: #c9d1d9; margin-bottom: 0.5rem; font-weight: 500;">Assignee</label>
+                            <select wire:model="assignee_id"
+                                style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; font-size: 0.875rem;">
+                                <option value="">Unassigned</option>
+                                @foreach($this->users as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
                     </div>
 
                     <!-- Footer -->

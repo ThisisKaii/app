@@ -1,4 +1,4 @@
-<!-- Budget Category Modal View -->
+
 <div>
     <!-- Category Cards -->
     @foreach($categories as $category)
@@ -15,7 +15,6 @@
             <!-- Category Header -->
             <div class="category-card-header">
                 <h3 class="category-title">{{ $category->title }}</h3>
-                <span class="category-id">#{{ $category->id }}</span>
             </div>
 
             <!-- Budget Info -->
@@ -75,7 +74,8 @@
 
     <!-- Category Modal -->
     @if($showCategoryModal)
-        <div class="modal-overlay" wire:click.self="closeCategoryModal">
+    @teleport('body')
+        <div class="modal-overlay" wire:click.self="closeCategoryModal" wire:key="category-modal">
             <div class="modal-content budget-modal" wire:click.stop>
                 <div class="modal-header">
                     <h2>{{ $categoryId ? '✏️ Edit Category' : '➕ New Category' }}</h2>
@@ -111,11 +111,11 @@
                             <div class="form-group">
                                 <label>Status</label>
                                 <select wire:model="categoryStatus">
-                                    <option value="draft">📝 Draft</option>
+                                    <option value="draft">Draft</option>
                                     <option value="pending">⏳ Pending</option>
                                     <option value="approved">✅ Approved</option>
                                     <option value="rejected">❌ Rejected</option>
-                                    <option value="completed">🎉 Completed</option>
+                                    <option value="completed">Completed</option>
                                 </select>
                             </div>
                         </div>
@@ -136,7 +136,7 @@
                             @if($category && $category->expenses->count() > 0)
                                 <div class="expenses-section">
                                     <div class="expenses-header">
-                                        <h3>💰 Expenses</h3>
+                                        <h3>Expenses</h3>
                                         <button type="button" class="btn-sm btn-primary"
                                             wire:click.prevent="openExpenseModal({{ $categoryId }})">
                                             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -195,7 +195,7 @@
                         @if($categoryId)
                             <button type="button" wire:click="confirmDeleteCategory({{ $categoryId }})" class="btn-delete"
                                 wire:loading.attr="disabled">
-                                🗑️ Delete Category
+                                Delete Category
                             </button>
                         @else
                             <div></div>
@@ -205,7 +205,7 @@
                             <button type="button" wire:click="closeCategoryModal" class="btn-cancel">Cancel</button>
                             <button type="submit" class="btn-submit" wire:loading.attr="disabled">
                                 <span wire:loading.remove
-                                    wire:target="saveCategory">{{ $categoryId ? '💾 Save Changes' : '✨ Create Category' }}</span>
+                                    wire:target="saveCategory">{{ $categoryId ? 'Save Changes' : 'Create Category' }}</span>
                                 <span wire:loading wire:target="saveCategory">Saving...</span>
                             </button>
                         </div>
@@ -213,11 +213,13 @@
                 </form>
             </div>
         </div>
+    @endteleport
     @endif
 
     <!-- Expense Modal -->
     @if($showExpenseModal)
-        <div class="modal-overlay" wire:click.self="closeExpenseModal">
+    @teleport('body')
+        <div class="modal-overlay" wire:click.self="closeExpenseModal" wire:key="expense-modal">
             <div class="modal-content small-modal" wire:click.stop>
                 <div class="modal-header">
                     <h2>{{ $expenseId ? '✏️ Edit Expense' : '➕ New Expense' }}</h2>
@@ -252,18 +254,20 @@
                         <button type="button" wire:click="closeExpenseModal" class="btn-cancel">Cancel</button>
                         <button type="submit" class="btn-submit" wire:loading.attr="disabled">
                             <span wire:loading.remove
-                                wire:target="saveExpense">{{ $expenseId ? '💾 Save Changes' : '✨ Add Expense' }}</span>
+                                wire:target="saveExpense">{{ $expenseId ? 'Save Changes' : 'Add Expense' }}</span>
                             <span wire:loading wire:target="saveExpense">Saving...</span>
                         </button>
                     </div>
                 </form>
             </div>
         </div>
+    @endteleport
     @endif
 
     <!-- Delete Category Confirmation -->
     @if($showDeleteCategoryModal)
-        <div class="modal-overlay delete-overlay" wire:click.self="closeDeleteCategoryModal">
+    @teleport('body')
+        <div class="modal-overlay delete-overlay" wire:click.self="closeDeleteCategoryModal" wire:key="delete-category-modal">
             <div class="delete-confirmation" wire:click.stop>
                 <h2>⚠️ Confirm Delete</h2>
                 <p>Are you sure you want to delete this category? All expenses within it will also be deleted. This action
@@ -282,11 +286,13 @@
                 </div>
             </div>
         </div>
+    @endteleport
     @endif
 
     <!-- Delete Expense Confirmation -->
     @if($showDeleteExpenseModal)
-        <div class="modal-overlay delete-overlay" wire:click.self="closeDeleteExpenseModal">
+    @teleport('body')
+        <div class="modal-overlay delete-overlay" wire:click.self="closeDeleteExpenseModal" wire:key="delete-expense-modal">
             <div class="delete-confirmation" wire:click.stop>
                 <h2>⚠️ Confirm Delete</h2>
                 <p>Are you sure you want to delete this expense? This action cannot be undone.</p>
@@ -304,5 +310,6 @@
                 </div>
             </div>
         </div>
+    @endteleport
     @endif
 </div>

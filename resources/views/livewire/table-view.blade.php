@@ -186,36 +186,36 @@
 
     <!-- Task Modal -->
     @if($showModal)
-        <div class="modal-overlay" wire:click.self="closeModal">
-            <div class="modal-content" wire:click.stop>
+        <div class="modal-overlay" wire:click.self="closeModal" style="background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;">
+            <div class="modal-content" wire:click.stop style="background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; max-width: 800px; width: 90%;">
                 <!-- Header -->
-                <div class="modal-header">
-                    <h2>{{ $isEditing ? 'Edit Task' : 'New Task' }}</h2>
-                    <button type="button" wire:click="closeModal" class="modal-close">&times;</button>
+                <div class="modal-header" style="border-bottom: 1px solid #21262d; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="color: #f0f6fc; margin: 0; font-size: 1.25rem;">{{ $isEditing ? 'Edit Task' : 'New Task' }}</h2>
+                    <button type="button" wire:click="closeModal" class="modal-close" style="background: none; border: none; color: #8b949e; font-size: 1.5rem; cursor: pointer;">&times;</button>
                 </div>
 
                 <!-- Form -->
                 <form wire:submit.prevent="saveTask">
-                    <div class="modal-body">
+                    <div class="modal-body" style="padding: 1.5rem;">
                         <!-- Row 1: Title (full width) -->
-                        <div class="form-group">
-                            <label>Title <span class="required">*</span></label>
-                            <input type="text" wire:model="title" required>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Title <span class="required" style="color: #ef4444;">*</span></label>
+                            <input type="text" wire:model="title" required style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
                             @error('title')
-                                <span class="error-message">{{ $message }}</span>
+                                <span class="error-message" style="color: #ef4444; font-size: 0.875rem;">{{ $message }}</span>
                             @enderror
                         </div>
 
                         <!-- Row 3: Type, Priority, Status (3 columns) -->
-                        <div class="form-row">
+                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                             <div class="form-group">
-                                <label>Type</label>
-                                <input type="text" wire:model="type" placeholder="e.g., Bug, Feature">
+                                <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Type</label>
+                                <input type="text" wire:model="type" placeholder="e.g., Bug, Feature" style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
                             </div>
 
                             <div class="form-group">
-                                <label>Priority</label>
-                                <select wire:model="priority">
+                                <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Priority</label>
+                                <select wire:model="priority" style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
                                     <option value="">None</option>
                                     <option value="low">Low</option>
                                     <option value="medium">Medium</option>
@@ -224,8 +224,8 @@
                             </div>
 
                             <div class="form-group">
-                                <label>Status</label>
-                                <select wire:model="status">
+                                <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Status</label>
+                                <select wire:model="status" style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
                                     <option value="to_do">To Do</option>
                                     <option value="in_progress">In Progress</option>
                                     <option value="in_review">In Review</option>
@@ -235,15 +235,15 @@
                         </div>
 
                         <!-- Row 4: Due Date, Assignee, URL (3 columns) -->
-                        <div class="form-row">
+                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                             <div class="form-group">
-                                <label>Due Date</label>
-                                <input type="date" wire:model="due_date" onclick="this.showPicker()">
+                                <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Due Date</label>
+                                <input type="date" wire:model="due_date" onclick="this.showPicker()" style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
                             </div>
 
                             <div class="form-group">
-                                <label>Assignee</label>
-                                <select wire:model="assignee_id">
+                                <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Assignee</label>
+                                <select wire:model="assignee_id" style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
                                     <option value="">Unassigned</option>
                                     @foreach($users as $user)
                                         <option value="{{ $user->id }}">{{ $user->name }}</option>
@@ -252,33 +252,33 @@
                             </div>
 
                             <div class="form-group">
-                                <label>URL / Link</label>
-                                <input type="url" wire:model="url" placeholder="https://example.com">
+                                <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">URL / Link</label>
+                                <input type="url" wire:model="url" placeholder="https://example.com" style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
                             </div>
                         </div>
 
                         <!-- Row 2: Description (full width) -->
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea wire:model="description" rows="2" placeholder="Add a description..."></textarea>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Description</label>
+                            <textarea wire:model="description" rows="2" placeholder="Add a description..." style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; min-height: 80px;"></textarea>
                         </div>
 
                         <!-- Row 5: Tags (full width with live color preview) -->
-                        <div class="form-group">
-                            <label>Tags</label>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Tags</label>
                             <input type="text" wire:model.live="tagsInput"
-                                placeholder="Enter tags separated by commas (e.g., urgent, backend, api)">
+                                placeholder="Enter tags separated by commas (e.g., urgent, backend, api)" style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
 
                             @if($tagsInput)
-                                <div class="tags-preview">
+                                <div class="tags-preview" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
                                     @foreach(array_filter(array_map('trim', explode(',', $tagsInput))) as $tagName)
                                         @php
                                             $existingTag = \App\Models\Tag::where('name', $tagName)->first();
                                             $color = $existingTag ? $existingTag->color : $availableColors[array_rand($availableColors)];
                                         @endphp
                                         <span class="tag-preview"
-                                            style="background: {{ $color }}20; color: {{ $color }}; border-color: {{ $color }};">
-                                            <span class="tag-dot" style="background: {{ $color }};"></span>
+                                            style="background: {{ $color }}20; color: {{ $color }}; border: 1px solid {{ $color }}; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem;">
+                                            <span class="tag-dot" style="background: {{ $color }}; width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>
                                             {{ $tagName }}
                                         </span>
                                     @endforeach
@@ -288,21 +288,22 @@
                     </div>
 
                     <!-- Footer -->
-                    <div class="modal-footer">
+                    <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid #21262d; display: flex; justify-content: space-between;">
                         @if($isEditing)
                             <button type="button" wire:click="showDeleteConfirmation()" class="btn-delete"
-                                wire:loading.attr="disabled">
+                                wire:loading.attr="disabled" style="background: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;">
                                 Delete Task
                             </button>
                         @else
                             <div></div>
                         @endif
 
-                        <div class="footer-actions">
-                            <button type="button" wire:click="closeModal" class="btn-cancel">
+                        <div class="footer-actions" style="display: flex; gap: 0.5rem;">
+                            <button type="button" wire:click="closeModal" class="btn-cancel" style="background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;">
                                 Cancel
                             </button>
-                            <button type="submit" class="btn-submit" wire:loading.attr="disabled">
+                            <button type="submit" class="btn-submit" wire:loading.attr="disabled"
+                                style="background: #238636; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;">
                                 <span wire:loading.remove
                                     wire:target="saveTask">{{ $isEditing ? 'Save Changes' : 'Create Task' }}</span>
                                 <span wire:loading wire:target="saveTask">Saving...</span>

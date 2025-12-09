@@ -15,11 +15,11 @@
                 @endif
 
                 @if($task->due_date)
-                    <span>📅 {{ $task->due_date->format('M d') }}</span>
+                    <span>{{ $task->due_date->format('M d') }}</span>
                 @endif
 
                 @if($task->assignee)
-                    <span>👤 {{ $task->assignee->name }}</span>
+                    <span>{{ $task->assignee->name }}</span>
                 @endif
             </div>
         </div>

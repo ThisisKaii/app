@@ -1,762 +1,411 @@
 <!-- resources/views/livewire/dashboard.blade.php -->
 
-<div class="container dashboard-container" x-data="dashboardCharts(@js($dashboardData), @js($isBusinessBoard))" x-init="init()">
+<div class="min-h-screen bg-[#161b22] text-[#c9d1d9] p-6 md:p-8" x-data wire:poll.15s>
     <!-- Header -->
-    <div class="dashboard-header">
-        <div class="header-left">
-            <div class="board-badge">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+            <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                {{ $isBusinessBoard ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' }} mb-2">
                 @if($isBusinessBoard)
-                    💼 Business
+                    Business Board
                 @else
-                    📊 Task
+                    Task Board
                 @endif
             </div>
-            <div>
-                <h1 class="dashboard-title">{{ $board->title }}</h1>
-                <p class="dashboard-subtitle">Dashboard Overview</p>
-            </div>
+            <h1 class="text-3xl font-bold text-[#f0f6fc]">{{ $board->title }}</h1>
+            <p class="text-[#8b949e] mt-1">Analytics Overview</p>
         </div>
 
         <!-- Date Range Filter -->
-        <div class="date-filter">
-            <div class="filter-group">
-                <button wire:click="setDateRange('all')" class="filter-btn {{ $dateRange === 'all' ? 'active' : '' }}">
-                    All Time
+        <div class="inline-flex bg-[#0d1117] p-1 rounded-xl border border-[#30363d]">
+            @foreach(['all' => 'All Time', 'week' => 'Week', 'month' => 'Month', 'quarter' => 'Quarter'] as $key => $label)
+                <button wire:click="setDateRange('{{ $key }}')" 
+                    class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 
+                    {{ $dateRange === $key 
+                        ? 'bg-[#21262d] text-[#f0f6fc] border border-[#30363d]' 
+                        : 'text-[#8b949e] hover:text-[#c9d1d9] hover:bg-[#21262d]/50' }}">
+                    {{ $label }}
                 </button>
-                <button wire:click="setDateRange('week')" class="filter-btn {{ $dateRange === 'week' ? 'active' : '' }}">
-                    This Week
-                </button>
-                <button wire:click="setDateRange('month')" class="filter-btn {{ $dateRange === 'month' ? 'active' : '' }}">
-                    This Month
-                </button>
-                <button wire:click="setDateRange('quarter')" class="filter-btn {{ $dateRange === 'quarter' ? 'active' : '' }}">
-                    This Quarter
-                </button>
-            </div>
+            @endforeach
         </div>
     </div>
 
     @if($isBusinessBoard)
-        <!-- ==================== BUSINESS BOARD DASHBOARD ==================== -->
+        <!-- ==================== BUSINESS BOARD ANALYTICS ==================== -->
         
         @if(isset($dashboardData['noBudget']) && $dashboardData['noBudget'])
-            <div class="empty-state">
-                <div class="empty-icon">💰</div>
-                <h2>No Budget Created Yet</h2>
-                <p class="empty-description">{{ $dashboardData['message'] }}</p>
-                <a href="{{ route('boards.show', $board->id) }}" class="btn-primary">
+            <div class="flex flex-col items-center justify-center py-20 bg-[#0d1117] rounded-3xl border border-[#30363d] border-dashed">
+                <div class="text-6xl mb-4 opacity-50">
+                    <svg class="w-16 h-16 mx-auto text-[#8b949e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-xl font-semibold mb-2 text-[#f0f6fc]">No Budget Created Yet</h2>
+                <p class="text-[#8b949e] mb-6">{{ $dashboardData['message'] }}</p>
+                <a href="{{ route('boards.show', $board->id) }}" class="px-6 py-2 bg-[#238636] text-white font-semibold rounded-full hover:bg-[#2ea043] transition-colors">
                     Go to Board
                 </a>
             </div>
         @else
-            <!-- Financial Metrics -->
-            <div class="metrics-grid">
-                <div class="metric-card card">
-                    <div class="metric-icon">💵</div>
-                    <div class="metric-content">
-                        <div class="metric-label">Total Budget</div>
-                        <div class="metric-value">${{ number_format($dashboardData['totalBudget'], 2) }}</div>
-                    </div>
-                </div>
-                
-                <div class="metric-card card">
-                    <div class="metric-icon">📊</div>
-                    <div class="metric-content">
-                        <div class="metric-label">Allocated</div>
-                        <div class="metric-value info">${{ number_format($dashboardData['totalAllocated'], 2) }}</div>
-                        <div class="metric-subtitle">{{ $dashboardData['allocatedPercent'] }}% of budget</div>
-                    </div>
-                </div>
-                
-                <div class="metric-card card">
-                    <div class="metric-icon">💸</div>
-                    <div class="metric-content">
-                        <div class="metric-label">Spent</div>
-                        <div class="metric-value {{ $dashboardData['spentPercent'] > 80 ? 'warning' : 'success' }}">
-                            ${{ number_format($dashboardData['totalSpent'], 2) }}
+            <!-- KPI Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <!-- Total Budget -->
+                <div class="bg-[#0d1117] rounded-2xl p-5 border border-[#30363d] hover:border-[#8b949e] transition-colors group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-2 bg-indigo-500/10 rounded-lg text-indigo-400 group-hover:bg-indigo-500/20 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
                         </div>
-                        <div class="metric-subtitle">{{ $dashboardData['spentPercent'] }}% of budget</div>
+                        <div class="text-xs font-medium text-[#8b949e] bg-[#21262d] px-2 py-1 rounded">Total</div>
                     </div>
+                    <div class="text-2xl font-bold mb-1 text-[#f0f6fc]">${{ number_format($dashboardData['totalBudget'], 0) }}</div>
+                    <div class="text-sm text-[#8b949e]">Total Allocated Budget</div>
                 </div>
                 
-                <div class="metric-card card">
-                    <div class="metric-icon">💰</div>
-                    <div class="metric-content">
-                        <div class="metric-label">Remaining</div>
-                        <div class="metric-value {{ $dashboardData['remaining'] < 0 ? 'danger' : 'success' }}">
-                            ${{ number_format(abs($dashboardData['remaining']), 2) }}
+                <!-- Spent -->
+                <div class="bg-[#0d1117] rounded-2xl p-5 border border-[#30363d] hover:border-[#8b949e] transition-colors group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-2 bg-rose-500/10 rounded-lg text-rose-400 group-hover:bg-rose-500/20 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
                         </div>
-                        @if($dashboardData['remaining'] < 0)
-                            <div class="metric-subtitle danger">Over Budget!</div>
-                        @endif
+                        <div class="text-xs font-medium text-[#8b949e] bg-[#21262d] px-2 py-1 rounded">Used</div>
                     </div>
+                    <div class="text-2xl font-bold mb-1 {{ $dashboardData['spentPercent'] > 90 ? 'text-rose-400' : 'text-[#f0f6fc]' }}">
+                        ${{ number_format($dashboardData['totalSpent'], 0) }}
+                    </div>
+                    <div class="w-full bg-[#21262d] h-1.5 rounded-full mt-3 overflow-hidden">
+                        <div class="bg-rose-500 h-1.5 rounded-full transition-all duration-1000" style="width: {{ min($dashboardData['spentPercent'], 100) }}%"></div>
+                    </div>
+                    <div class="flex justify-between mt-1 text-xs text-[#8b949e]">
+                        <span>{{ $dashboardData['spentPercent'] }}%</span>
+                        <span>Used</span>
+                    </div>
+                </div>
+
+                <!-- Remaining -->
+                <div class="bg-[#0d1117] rounded-2xl p-5 border border-[#30363d] hover:border-[#8b949e] transition-colors group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-2 bg-emerald-500/10 rounded-lg text-emerald-400 group-hover:bg-emerald-500/20 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                        </div>
+                        <div class="text-xs font-medium text-[#8b949e] bg-[#21262d] px-2 py-1 rounded">Left</div>
+                    </div>
+                    <div class="text-2xl font-bold mb-1 {{ $dashboardData['remaining'] < 0 ? 'text-rose-500' : 'text-emerald-400' }}">
+                        ${{ number_format(abs($dashboardData['remaining']), 0) }}
+                    </div>
+                    <div class="text-sm text-[#8b949e]">
+                        {{ $dashboardData['remaining'] < 0 ? 'Over Budget' : 'Remaining Funds' }}
+                    </div>
+                </div>
+
+                <!-- Burn Rate -->
+                <div class="bg-[#0d1117] rounded-2xl p-5 border border-[#30363d] hover:border-[#8b949e] transition-colors group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-2 bg-amber-500/10 rounded-lg text-amber-400 group-hover:bg-amber-500/20 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                        </div>
+                        <div class="flex items-center gap-1 text-xs font-medium {{ ($dashboardData['spendingTrend'] ?? 0) > 0 ? 'text-rose-400' : 'text-emerald-400' }}">
+                            {{ ($dashboardData['spendingTrend'] ?? 0) > 0 ? '↑' : '↓' }} {{ abs($dashboardData['spendingTrend'] ?? 0) }}%
+                        </div>
+                    </div>
+                    <div class="text-2xl font-bold mb-1 text-[#f0f6fc]">${{ number_format($dashboardData['burnRate'], 0) }}</div>
+                    <div class="text-sm text-[#8b949e]">Daily Burn Rate</div>
                 </div>
             </div>
 
-            <!-- Budget Health -->
-            <div class="section card">
-                <div class="section-header">
-                    <h3 class="section-title">Budget Health</h3>
-                </div>
-                <div class="budget-health">
-                    @if($dashboardData['budgetHealth'] === 'on_track')
-                        <div class="health-status on-track">
-                            <span class="health-icon">✅</span>
-                            <div class="health-content">
-                                <div class="health-title">On Track</div>
-                                <div class="health-description">Spending is within budget limits</div>
-                            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Enhanced Analytics Column -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Category Breakdown (Progress Bars) -->
+                    <div class="bg-[#0d1117] rounded-2xl p-6 border border-[#30363d]">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-semibold text-[#f0f6fc]">Budget Allocation</h3>
+                            <span class="text-xs text-[#8b949e]">Top Categories</span>
                         </div>
-                    @elseif($dashboardData['budgetHealth'] === 'warning')
-                        <div class="health-status warning">
-                            <span class="health-icon">⚠️</span>
-                            <div class="health-content">
-                                <div class="health-title">Warning</div>
-                                <div class="health-description">80%+ of budget spent</div>
-                            </div>
-                        </div>
-                    @else
-                        <div class="health-status danger">
-                            <span class="health-icon">🚨</span>
-                            <div class="health-content">
-                                <div class="health-title">Over Budget</div>
-                                <div class="health-description">Exceeded allocated budget</div>
-                            </div>
-                        </div>
-                    @endif
-                    
-                    <div class="health-stats">
-                        <div class="health-stat">
-                            <div class="stat-value">{{ $dashboardData['categoriesAtRisk'] }}</div>
-                            <div class="stat-label">At Risk</div>
-                        </div>
-                        <div class="divider"></div>
-                        <div class="health-stat">
-                            <div class="stat-value">{{ $dashboardData['categoriesOverBudget'] }}</div>
-                            <div class="stat-label">Over Budget</div>
-                        </div>
-                        <div class="divider"></div>
-                        <div class="health-stat">
-                            <div class="stat-value">${{ number_format($dashboardData['burnRate'], 2) }}</div>
-                            <div class="stat-label">Burn Rate/Day</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Charts -->
-            <div class="charts-grid">
-                <!-- Category Allocation Pie Chart -->
-                <div class="chart-section card">
-                    <div class="section-header">
-                        <h3 class="section-title">Budget Allocation</h3>
-                    </div>
-                    <div class="chart-container" id="categoryPieChart"></div>
-                </div>
-                
-                <!-- Estimated vs Spent Bar Chart -->
-                <div class="chart-section card">
-                    <div class="section-header">
-                        <h3 class="section-title">Estimated vs Spent</h3>
-                    </div>
-                    <div class="chart-container" id="budgetComparisonChart"></div>
-                </div>
-            </div>
-
-            <!-- Monthly Spending Trend -->
-            <div class="chart-section card">
-                <div class="section-header">
-                    <h3 class="section-title">Monthly Spending Trend</h3>
-                </div>
-                <div class="chart-container" id="monthlyTrendChart"></div>
-            </div>
-
-            <!-- Status Distribution & Top Spending -->
-            <div class="charts-grid">
-                <!-- Status Distribution -->
-                <div class="chart-section card">
-                    <div class="section-header">
-                        <h3 class="section-title">Status Distribution</h3>
-                    </div>
-                    <div class="chart-container" id="statusPieChart"></div>
-                </div>
-                
-                <!-- Top Spending Categories -->
-                <div class="list-section card">
-                    <div class="section-header">
-                        <h3 class="section-title">Top Spending Categories</h3>
-                    </div>
-                    <div class="list-content">
-                        @forelse($dashboardData['topSpending'] as $category)
-                            <div class="list-item">
-                                <div class="list-item-icon">
-                                    <div class="category-dot" style="background-color: {{ $category->color ?? '#3b82f6' }}"></div>
-                                </div>
-                                <div class="list-item-content">
-                                    <div class="list-item-title">{{ $category->title }}</div>
-                                    <div class="list-item-meta">
-                                        ${{ number_format($category->amount_estimated, 2) }} estimated · 
-                                        {{ number_format($category->getProgressPercentage(), 0) }}% spent
+                        <div class="space-y-5">
+                            @foreach($dashboardData['categoryBreakdown'] as $category)
+                                <div>
+                                    <div class="flex justify-between items-end mb-2">
+                                        <div>
+                                            <div class="font-medium text-sm text-[#c9d1d9]">{{ $category['title'] }}</div>
+                                            <div class="text-xs text-[#8b949e]">${{ number_format($category['spent']) }} / ${{ number_format($category['estimated']) }}</div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="font-bold text-sm {{ $category['progress'] > 100 ? 'text-rose-400' : 'text-[#f0f6fc]' }}">{{ number_format($category['progress'], 0) }}%</div>
+                                        </div>
+                                    </div>
+                                    <div class="w-full bg-[#21262d] h-2 rounded-full overflow-hidden">
+                                        <div class="h-2 rounded-full transition-all duration-1000 
+                                            {{ $category['progress'] > 100 ? 'bg-rose-500' : ($category['progress'] > 80 ? 'bg-amber-500' : 'bg-indigo-500') }}" 
+                                            style="width: {{ min($category['progress'], 100) }}%"></div>
                                     </div>
                                 </div>
-                                <div class="list-item-value {{ $category->isOverBudget() ? 'danger' : '' }}">
-                                    ${{ number_format($category->getTotalSpent(), 2) }}
-                                </div>
-                            </div>
-                        @empty
-                            <div class="empty-list">
-                                <p>No categories yet</p>
-                            </div>
-                        @endforelse
+                            @endforeach
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Recent & Largest Expenses -->
-            <div class="charts-grid">
-                <!-- Recent Expenses -->
-                <div class="list-section card">
-                    <div class="section-header">
-                        <h3 class="section-title">
-                            Recent Expenses
-                            <span class="badge">{{ $dashboardData['totalExpenses'] }}</span>
-                        </h3>
-                    </div>
-                    <div class="list-content">
-                        @forelse($dashboardData['recentExpenses'] as $expense)
-                            <div class="list-item">
-                                <div class="list-item-icon">
-                                    <div class="expense-icon">📝</div>
-                                </div>
-                                <div class="list-item-content">
-                                    <div class="list-item-title">{{ $expense['category'] }}</div>
-                                    <div class="list-item-meta">
-                                        {{ $expense['description'] ?? 'No description' }} · 
-                                        {{ \Carbon\Carbon::parse($expense['created_at'])->diffForHumans() }}
+                    <!-- Recent Transactions -->
+                    <div class="bg-[#0d1117] rounded-2xl p-6 border border-[#30363d]">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-semibold text-[#f0f6fc]">Recent Transactions</h3>
+                            <button wire:click="toggleAllTransactions" class="text-xs text-[#8b949e] hover:text-[#c9d1d9] transition-colors">View All</button>
+                        </div>
+                        <div class="space-y-4">
+                            @forelse($dashboardData['recentExpenses'] as $expense)
+                                <div class="flex items-center justify-between p-3 hover:bg-[#21262d] rounded-xl transition-colors group">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-full bg-[#21262d] flex items-center justify-center border border-[#30363d] group-hover:border-[#8b949e]">
+                                            <svg class="w-5 h-5 text-[#8b949e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-sm text-[#c9d1d9]">{{ $expense['category'] }}</div>
+                                            <div class="text-xs text-[#8b949e]">{{ Str::limit($expense['description'] ?? 'No description', 30) }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-mono font-medium text-sm text-[#f0f6fc]">-${{ number_format($expense['amount'], 2) }}</div>
+                                        <div class="text-xs text-[#8b949e]">{{ \Carbon\Carbon::parse($expense['created_at'])->format('M d') }}</div>
                                     </div>
                                 </div>
-                                <div class="list-item-value">${{ number_format($expense['amount'], 2) }}</div>
-                            </div>
-                        @empty
-                            <div class="empty-list">
-                                <p>No expenses yet</p>
-                            </div>
-                        @endforelse
+                            @empty
+                                <div class="text-center py-8 text-[#8b949e]">No recent transactions</div>
+                            @endforelse
+                        </div>
                     </div>
                 </div>
-                
-                <!-- Largest Expenses -->
-                <div class="list-section card">
-                    <div class="section-header">
-                        <h3 class="section-title">Largest Expenses</h3>
+
+                <!-- Side Stats Column -->
+                <div class="space-y-8">
+                    <!-- Status Checks -->
+                    <div class="bg-[#0d1117] rounded-2xl p-6 border border-[#30363d]">
+                        <h3 class="text-lg font-semibold mb-6 text-[#f0f6fc]">Approval Status</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            @foreach($dashboardData['statusDistribution'] as $status => $count)
+                                <div class="p-4 rounded-xl bg-[#161b22] border border-[#30363d]">
+                                    <div class="text-2xl font-bold mb-1 text-[#f0f6fc]">{{ $count }}</div>
+                                    <div class="text-xs text-[#8b949e] uppercase tracking-wider">{{ ucfirst($status) }}</div>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
-                    <div class="list-content">
-                        @forelse($dashboardData['largestExpenses'] as $expense)
-                            <div class="list-item">
-                                <div class="list-item-icon">
-                                    <div class="expense-icon">💰</div>
+
+                    <!-- Largest Expenses -->
+                    <div class="bg-[#0d1117] rounded-2xl p-6 border border-[#30363d]">
+                        <h3 class="text-lg font-semibold mb-6 text-[#f0f6fc]">Largest Expenses</h3>
+                        <div class="space-y-4">
+                            @foreach($dashboardData['largestExpenses'] as $expense)
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-[#c9d1d9]">{{ $expense['category'] }}</span>
+                                    <span class="font-mono text-rose-400">-${{ number_format($expense['amount'], 0) }}</span>
                                 </div>
-                                <div class="list-item-content">
-                                    <div class="list-item-title">{{ $expense['category'] }}</div>
-                                    <div class="list-item-meta">{{ $expense['description'] ?? 'No description' }}</div>
-                                </div>
-                                <div class="list-item-value danger">${{ number_format($expense['amount'], 2) }}</div>
-                            </div>
-                        @empty
-                            <div class="empty-list">
-                                <p>No expenses yet</p>
-                            </div>
-                        @endforelse
+                            @endforeach
+                        </div>
+                        
+                        <div class="mt-6 pt-6 border-t border-[#30363d]">
+                             <div class="flex justify-between items-center">
+                                <span class="text-sm text-[#8b949e]">Budget Health</span>
+                                @if($dashboardData['budgetHealth'] === 'on_track')
+                                    <span class="px-2 py-1 rounded text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">On Track</span>
+                                @elseif($dashboardData['budgetHealth'] === 'warning')
+                                    <span class="px-2 py-1 rounded text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20">Warning</span>
+                                @else
+                                    <span class="px-2 py-1 rounded text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20">Over Budget</span>
+                                @endif
+                             </div>
+                        </div>
                     </div>
                 </div>
             </div>
         @endif
-        
+
     @else
-        <!-- ==================== NORMAL BOARD DASHBOARD ==================== -->
+        <!-- ==================== NORMAL (TASK) DASHBOARD ==================== -->
         
-        <!-- Key Metrics -->
-        <div class="metrics-grid">
-            <div class="metric-card card">
-                <div class="metric-icon">📋</div>
-                <div class="metric-content">
-                    <div class="metric-label">Total Tasks</div>
-                    <div class="metric-value">{{ $dashboardData['totalTasks'] }}</div>
+        <!-- Task Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-[#0d1117] rounded-2xl p-5 border border-[#30363d]">
+                <div class="text-sm text-[#8b949e] mb-2">Total Tasks</div>
+                <div class="text-3xl font-bold text-[#f0f6fc]">{{ $dashboardData['totalTasks'] }}</div>
+            </div>
+            <div class="bg-[#0d1117] rounded-2xl p-5 border border-[#30363d]">
+                <div class="text-sm text-[#8b949e] mb-2">Completion Rate</div>
+                <div class="text-3xl font-bold text-emerald-400">{{ $dashboardData['completionRate'] }}%</div>
+                <div class="w-full bg-[#21262d] h-1 mt-3 rounded-full overflow-hidden">
+                    <div class="bg-emerald-500 h-1 rounded-full" style="width: {{ $dashboardData['completionRate'] }}%"></div>
                 </div>
             </div>
-            
-            <div class="metric-card card">
-                <div class="metric-icon">✅</div>
-                <div class="metric-content">
-                    <div class="metric-label">Completed</div>
-                    <div class="metric-value success">{{ $dashboardData['completedTasks'] }}</div>
-                    <div class="metric-subtitle">{{ $dashboardData['completionRate'] }}% completion rate</div>
-                </div>
+            <div class="bg-[#0d1117] rounded-2xl p-5 border border-[#30363d]">
+                <div class="text-sm text-[#8b949e] mb-2">In Progress</div>
+                <div class="text-3xl font-bold text-blue-400">{{ $dashboardData['inProgressTasks'] }}</div>
             </div>
-            
-            <div class="metric-card card">
-                <div class="metric-icon">🔄</div>
-                <div class="metric-content">
-                    <div class="metric-label">In Progress</div>
-                    <div class="metric-value info">{{ $dashboardData['inProgressTasks'] }}</div>
-                </div>
-            </div>
-            
-            <div class="metric-card card">
-                <div class="metric-icon">⚠️</div>
-                <div class="metric-content">
-                    <div class="metric-label">Overdue</div>
-                    <div class="metric-value {{ $dashboardData['overdueTasks'] > 0 ? 'danger' : '' }}">
-                        {{ $dashboardData['overdueTasks'] }}
-                    </div>
+            <div class="bg-[#0d1117] rounded-2xl p-5 border border-[#30363d]">
+                <div class="text-sm text-[#8b949e] mb-2">Overdue</div>
+                <div class="text-3xl font-bold {{ $dashboardData['overdueTasks'] > 0 ? 'text-rose-400' : 'text-[#8b949e]' }}">
+                    {{ $dashboardData['overdueTasks'] }}
                 </div>
             </div>
         </div>
 
-        <!-- Charts -->
-        <div class="charts-grid">
-            <!-- Status Distribution -->
-            <div class="chart-section card">
-                <div class="section-header">
-                    <h3 class="section-title">Status Distribution</h3>
-                </div>
-                <div class="chart-container" id="statusChart"></div>
-            </div>
-            
-            <!-- Priority Breakdown -->
-            <div class="chart-section card">
-                <div class="section-header">
-                    <h3 class="section-title">Priority Breakdown</h3>
-                </div>
-                <div class="chart-container" id="priorityChart"></div>
-            </div>
-        </div>
-
-        <!-- Weekly Completion Trend -->
-        <div class="chart-section card">
-            <div class="section-header">
-                <h3 class="section-title">Weekly Completion Trend</h3>
-            </div>
-            <div class="chart-container" id="weeklyTrendChart"></div>
-        </div>
-
-        <!-- Timeline & Team Activity -->
-        <div class="charts-grid">
-            <!-- Due Date Timeline -->
-            <div class="list-section card">
-                <div class="section-header">
-                    <h3 class="section-title">Upcoming Deadlines</h3>
-                </div>
-                <div class="list-content">
-                    <div class="list-item">
-                        <div class="list-item-icon">
-                            <div class="deadline-icon">📅</div>
-                        </div>
-                        <div class="list-item-content">
-                            <div class="list-item-title">Due This Week</div>
-                        </div>
-                        <div class="list-item-value">{{ $dashboardData['dueThisWeek'] }}</div>
-                    </div>
-                    <div class="list-item">
-                        <div class="list-item-icon">
-                            <div class="deadline-icon">📆</div>
-                        </div>
-                        <div class="list-item-content">
-                            <div class="list-item-title">Due Next Week</div>
-                        </div>
-                        <div class="list-item-value">{{ $dashboardData['dueNextWeek'] }}</div>
-                    </div>
-                    <div class="list-item">
-                        <div class="list-item-icon">
-                            <div class="deadline-icon">👤</div>
-                        </div>
-                        <div class="list-item-content">
-                            <div class="list-item-title">Unassigned Tasks</div>
-                        </div>
-                        <div class="list-item-value {{ $dashboardData['unassignedTasks'] > 0 ? 'danger' : '' }}">
-                            {{ $dashboardData['unassignedTasks'] }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Team Activity -->
-            <div class="list-section card">
-                <div class="section-header">
-                    <h3 class="section-title">Top Contributors</h3>
-                </div>
-                <div class="list-content">
-                    @forelse($dashboardData['assigneeStats'] as $stat)
-                        <div class="list-item">
-                            <div class="list-item-icon">
-                                <div class="contributor-avatar">
-                                    {{ substr($stat['assignee'], 0, 1) }}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Task Status Bars -->
+                <div class="bg-[#0d1117] rounded-2xl p-6 border border-[#30363d]">
+                    <h3 class="text-lg font-semibold mb-6 text-[#f0f6fc]">Task Composition</h3>
+                    <div class="space-y-6">
+                        @foreach(['to_do' => 'To Do', 'in_progress' => 'In Progress', 'in_review' => 'In Review', 'published' => 'Completed'] as $key => $label)
+                            @php 
+                                $count = $dashboardData['statusDistribution'][$key] ?? 0;
+                                $percentage = $dashboardData['totalTasks'] > 0 ? ($count / $dashboardData['totalTasks']) * 100 : 0;
+                                $color = match($key) {
+                                    'to_do' => 'bg-[#6e7681]',
+                                    'in_progress' => 'bg-[#58a6ff]',
+                                    'in_review' => 'bg-[#d29922]',
+                                    'published' => 'bg-[#3fb950]',
+                                };
+                            @endphp
+                            <div>
+                                <div class="flex justify-between mb-2 text-sm">
+                                    <span class="text-[#c9d1d9]">{{ $label }}</span>
+                                    <span class="font-mono text-[#8b949e]">{{ $count }} tasks</span>
+                                </div>
+                                <div class="w-full bg-[#21262d] h-3 rounded-full overflow-hidden">
+                                    <div class="{{ $color }} h-3 rounded-full transition-all duration-500" style="width: {{ $percentage }}%"></div>
                                 </div>
                             </div>
-                            <div class="list-item-content">
-                                <div class="list-item-title">{{ $stat['assignee'] }}</div>
-                                <div class="list-item-meta">{{ $stat['completed'] }} completed / {{ $stat['total'] }} total</div>
+                        @endforeach
+                    </div>
+                </div>
+                
+                <!-- Recent Tasks List -->
+                <div class="bg-[#0d1117] rounded-2xl p-6 border border-[#30363d]">
+                    <h3 class="text-lg font-semibold mb-6 text-[#f0f6fc]">Recent Activity</h3>
+                    <div class="space-y-2 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                        @forelse($dashboardData['recentTasks'] as $task)
+                            <div class="flex items-center justify-between p-3 rounded-xl hover:bg-[#21262d] transition-colors border border-transparent hover:border-[#30363d]">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-sm font-medium text-[#c9d1d9]">{{ $task->title }}</span>
+                                </div>
+                                <div class="flex items-center gap-4 text-xs">
+                                    @if($task->assignee)
+                                        <div class="flex items-center gap-1 text-[#8b949e]">
+                                            <span class="w-5 h-5 rounded-full bg-[#21262d] flex items-center justify-center text-[10px] border border-[#30363d]">
+                                                {{ substr($task->assignee->name, 0, 1) }}
+                                            </span>
+                                            {{ $task->assignee->name }}
+                                        </div>
+                                    @endif
+                                    <span class="text-[#8b949e]">{{ $task->updated_at->diffForHumans() }}</span>
+                                </div>
                             </div>
-                            <div class="list-item-value success">
-                                {{ $stat['total'] > 0 ? round(($stat['completed'] / $stat['total']) * 100) : 0 }}%
+                        @empty
+                            <div class="text-[#8b949e] text-center py-6">No recent tasks</div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-8">
+                <!-- Priority Breakdown -->
+                <div class="bg-[#0d1117] rounded-2xl p-6 border border-[#30363d]">
+                    <h3 class="text-lg font-semibold mb-6 text-[#f0f6fc]">By Priority</h3>
+                    <div class="space-y-3">
+                        @foreach(['high' => 'text-rose-400 bg-rose-400/10 border-rose-400/20', 'medium' => 'text-amber-400 bg-amber-400/10 border-amber-400/20', 'low' => 'text-blue-400 bg-blue-400/10 border-blue-400/20'] as $priority => $classes)
+                            <div class="flex items-center justify-between p-3 rounded-xl border {{ $classes }}">
+                                <span class="capitalize font-medium">{{ $priority }}</span>
+                                <span class="font-bold">{{ $dashboardData['priorityBreakdown'][$priority] ?? 0 }}</span>
                             </div>
-                        </div>
-                    @empty
-                        <div class="empty-list">
-                            <p>No assigned tasks yet</p>
-                        </div>
-                    @endforelse
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Team Stats -->
+                <div class="bg-[#0d1117] rounded-2xl p-6 border border-[#30363d]">
+                    <h3 class="text-lg font-semibold mb-6 text-[#f0f6fc]">Top Contributors</h3>
+                    <div class="space-y-4">
+                        @foreach($dashboardData['assigneeStats'] as $stat)
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-3">
+                                        <div class="relative">
+                                            <div class="w-8 h-8 rounded-full bg-[#21262d] flex items-center justify-center border border-[#30363d] text-xs text-[#c9d1d9]">
+                                                {{ substr($stat['assignee'], 0, 1) }}
+                                            </div>
+                                            <!-- Active status indicator -->
+                                            <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0d1117] {{ $stat['is_active'] ? 'bg-emerald-500' : 'bg-[#6e7681]' }}"></div>
+                                        </div>
+                                        <div class="text-sm">
+                                            <div class="font-medium text-[#c9d1d9]">{{ $stat['assignee'] }}</div>
+                                            <div class="text-xs text-[#8b949e]">{{ $stat['completed'] }} / {{ $stat['total'] }} tasks</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-sm font-bold text-[#f0f6fc]">{{ $stat['percentage'] }}%</div>
+                                </div>
+                                <div class="w-full bg-[#21262d] h-1.5 rounded-full overflow-hidden">
+                                    <div class="bg-emerald-500 h-1.5 rounded-full transition-all duration-1000" style="width: {{ $stat['percentage'] }}%"></div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
             </div>
         </div>
+    @endif
 
-        <!-- Recent Tasks -->
-        <div class="list-section card">
-            <div class="section-header">
-                <h3 class="section-title">Recent Activity</h3>
-            </div>
-            <div class="list-content">
-                @forelse($dashboardData['recentTasks'] as $task)
-                    <div class="list-item">
-                        <div class="list-item-icon">
-                            <div class="task-icon">
-                                @if($task->status === 'published') ✅
-                                @elseif($task->status === 'in_progress') 🔄
-                                @elseif($task->status === 'in_review') 👁️
-                                @else 📝
-                                @endif
+    <!-- All Transactions Modal -->
+    @if($showAllTransactions && $isBusinessBoard)
+        <div class="modal-overlay" wire:click.self="toggleAllTransactions">
+            <div class="modal-content budget-modal" wire:click.stop style="max-width: 800px;">
+                <div class="modal-header">
+                    <h2>All Transactions</h2>
+                    <button type="button" wire:click="toggleAllTransactions" class="modal-close">&times;</button>
+                </div>
+
+                <div class="modal-body" style="max-height: 600px; overflow-y: auto;">
+                    <div class="space-y-3">
+                        @forelse($dashboardData['recentExpenses'] ?? [] as $expense)
+                            <div class="flex items-center justify-between p-4 hover:bg-[#21262d] rounded-xl transition-colors border border-[#30363d]">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 rounded-full bg-[#21262d] flex items-center justify-center text-xl border border-[#30363d]">
+                                        🧾
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-base text-[#c9d1d9]">{{ $expense['category'] }}</div>
+                                        <div class="text-sm text-[#8b949e]">{{ $expense['description'] ?? 'No description' }}</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-mono font-bold text-base text-rose-400">-${{ number_format($expense['amount'], 2) }}</div>
+                                    <div class="text-sm text-[#8b949e]">{{ \Carbon\Carbon::parse($expense['created_at'])->format('M d, Y') }}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="list-item-content">
-                            <div class="list-item-title">{{ $task->title }}</div>
-                            <div class="list-item-meta">
-                                <span class="status-badge 
-                                    @if($task->status === 'published') success
-                                    @elseif($task->status === 'in_progress') info
-                                    @elseif($task->status === 'in_review') warning
-                                    @else '' @endif">
-                                    {{ ucfirst(str_replace('_', ' ', $task->status)) }}
-                                </span>
-                                @if($task->priority)
-                                    <span class="priority-badge {{ $task->priority }}">
-                                        {{ ucfirst($task->priority) }}
-                                    </span>
-                                @endif
-                                @if($task->assignee)
-                                    <span class="assignee">· {{ $task->assignee->name }}</span>
-                                @endif
-                                @if($task->due_date)
-                                    <span class="due-date">· {{ $task->due_date->format('M d, Y') }}</span>
-                                @endif
+                        @empty
+                            <div class="text-center py-12 text-[#8b949e]">
+                                <div class="text-4xl mb-3">
+                                    <svg class="w-12 h-12 mx-auto text-[#8b949e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                    </svg>
+                                </div>
+                                <div>No transactions found</div>
                             </div>
-                        </div>
-                        <div class="list-item-meta time">
-                            {{ $task->updated_at->diffForHumans() }}
-                        </div>
+                        @endforelse
                     </div>
-                @empty
-                    <div class="empty-list">
-                        <p>No tasks yet</p>
-                    </div>
-                @endforelse
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" wire:click="toggleAllTransactions" class="btn-cancel">Close</button>
+                </div>
             </div>
         </div>
     @endif
 </div>
-
-<!-- ApexCharts Library -->
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-
-<script>
-function dashboardCharts(data, isBusinessBoard) {
-    return {
-        data: data,
-        isBusinessBoard: isBusinessBoard,
-        charts: {},
-        
-        init() {
-            setTimeout(() => {
-                this.renderCharts();
-            }, 100);
-            
-            // Re-render on Livewire updates
-            Livewire.on('budget-updated', () => {
-                setTimeout(() => {
-                    this.destroyCharts();
-                    this.renderCharts();
-                }, 200);
-            });
-            
-            Livewire.on('category-updated', () => {
-                setTimeout(() => {
-                    this.destroyCharts();
-                    this.renderCharts();
-                }, 200);
-            });
-        },
-        
-        destroyCharts() {
-            Object.keys(this.charts).forEach(key => {
-                if (this.charts[key]) {
-                    this.charts[key].destroy();
-                }
-            });
-            this.charts = {};
-        },
-        
-        renderCharts() {
-            if (this.isBusinessBoard && !this.data.noBudget) {
-                this.renderBusinessCharts();
-            } else if (!this.isBusinessBoard) {
-                this.renderTaskCharts();
-            }
-        },
-        
-        renderBusinessCharts() {
-            // Category Pie Chart
-            const categoryData = this.data.categoryBreakdown || [];
-            if (categoryData.length > 0 && document.querySelector('#categoryPieChart')) {
-                this.charts.categoryPie = new ApexCharts(document.querySelector('#categoryPieChart'), {
-                    series: categoryData.map(c => c.estimated),
-                    chart: {
-                        type: 'donut',
-                        height: 300
-                    },
-                    labels: categoryData.map(c => c.title),
-                    colors: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'],
-                    legend: {
-                        position: 'bottom'
-                    },
-                    dataLabels: {
-                        enabled: true,
-                        formatter: function (val) {
-                            return val.toFixed(0) + "%"
-                        }
-                    }
-                });
-                this.charts.categoryPie.render();
-            }
-            
-            // Budget Comparison Bar Chart
-            if (categoryData.length > 0 && document.querySelector('#budgetComparisonChart')) {
-                const top5 = categoryData.slice(0, 5);
-                this.charts.budgetComparison = new ApexCharts(document.querySelector('#budgetComparisonChart'), {
-                    series: [
-                        {
-                            name: 'Estimated',
-                            data: top5.map(c => c.estimated)
-                        },
-                        {
-                            name: 'Spent',
-                            data: top5.map(c => c.spent)
-                        }
-                    ],
-                    chart: {
-                        type: 'bar',
-                        height: 300
-                    },
-                    plotOptions: {
-                        bar: {
-                            horizontal: false,
-                            columnWidth: '55%',
-                            borderRadius: 5
-                        }
-                    },
-                    dataLabels: {
-                        enabled: false
-                    },
-                    xaxis: {
-                        categories: top5.map(c => c.title)
-                    },
-                    colors: ['#3b82f6', '#ef4444'],
-                    yaxis: {
-                        labels: {
-                            formatter: function (val) {
-                                return '$' + val.toFixed(0)
-                            }
-                        }
-                    },
-                    legend: {
-                        position: 'top'
-                    }
-                });
-                this.charts.budgetComparison.render();
-            }
-            
-            // Monthly Trend Line Chart
-            const monthlyData = this.data.monthlyTrend || [];
-            if (monthlyData.length > 0 && document.querySelector('#monthlyTrendChart')) {
-                this.charts.monthlyTrend = new ApexCharts(document.querySelector('#monthlyTrendChart'), {
-                    series: [{
-                        name: 'Spent',
-                        data: monthlyData.map(m => m.spent)
-                    }],
-                    chart: {
-                        type: 'area',
-                        height: 300,
-                        zoom: {
-                            enabled: false
-                        }
-                    },
-                    dataLabels: {
-                        enabled: false
-                    },
-                    stroke: {
-                        curve: 'smooth',
-                        width: 3
-                    },
-                    xaxis: {
-                        categories: monthlyData.map(m => m.month)
-                    },
-                    yaxis: {
-                        labels: {
-                            formatter: function (val) {
-                                return '$' + val.toFixed(0)
-                            }
-                        }
-                    },
-                    colors: ['#ef4444'],
-                    fill: {
-                        type: 'gradient',
-                        gradient: {
-                            opacityFrom: 0.6,
-                            opacityTo: 0.1
-                        }
-                    }
-                });
-                this.charts.monthlyTrend.render();
-            }
-            
-            // Status Pie Chart
-            const statusData = this.data.statusDistribution || {};
-            if (document.querySelector('#statusPieChart')) {
-                const statusValues = [
-                    statusData.draft || 0,
-                    statusData.pending || 0,
-                    statusData.approved || 0,
-                    statusData.rejected || 0,
-                    statusData.completed || 0
-                ];
-                
-                this.charts.statusPie = new ApexCharts(document.querySelector('#statusPieChart'), {
-                    series: statusValues,
-                    chart: {
-                        type: 'donut',
-                        height: 300
-                    },
-                    labels: ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'],
-                    colors: ['#6b7280', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'],
-                    legend: {
-                        position: 'bottom'
-                    }
-                });
-                this.charts.statusPie.render();
-            }
-        },
-        
-        renderTaskCharts() {
-            // Status Distribution
-            const statusData = this.data.statusDistribution || {};
-            if (document.querySelector('#statusChart')) {
-                const statusValues = [
-                    statusData.to_do || 0,
-                    statusData.in_review || 0,
-                    statusData.in_progress || 0,
-                    statusData.published || 0
-                ];
-                
-                this.charts.status = new ApexCharts(document.querySelector('#statusChart'), {
-                    series: statusValues,
-                    chart: {
-                        type: 'donut',
-                        height: 300
-                    },
-                    labels: ['To Do', 'In Review', 'In Progress', 'Published'],
-                    colors: ['#6b7280', '#f59e0b', '#3b82f6', '#10b981'],
-                    legend: {
-                        position: 'bottom'
-                    }
-                });
-                this.charts.status.render();
-            }
-            
-            // Priority Breakdown
-            const priorityData = this.data.priorityBreakdown || {};
-            if (document.querySelector('#priorityChart')) {
-                const priorityValues = [
-                    priorityData.high || 0,
-                    priorityData.medium || 0,
-                    priorityData.low || 0,
-                    priorityData.none || 0
-                ];
-                
-                this.charts.priority = new ApexCharts(document.querySelector('#priorityChart'), {
-                    series: [{
-                        name: 'Tasks',
-                        data: priorityValues
-                    }],
-                    chart: {
-                        type: 'bar',
-                        height: 300
-                    },
-                    plotOptions: {
-                        bar: {
-                            borderRadius: 5,
-                            horizontal: false,
-                            distributed: true
-                        }
-                    },
-                    dataLabels: {
-                        enabled: false
-                    },
-                    xaxis: {
-                        categories: ['High', 'Medium', 'Low', 'None']
-                    },
-                    colors: ['#ef4444', '#f59e0b', '#3b82f6', '#6b7280'],
-                    legend: {
-                        show: false
-                    }
-                });
-                this.charts.priority.render();
-            }
-            
-            // Weekly Trend
-            const weeklyData = this.data.weeklyTrend || [];
-            if (weeklyData.length > 0 && document.querySelector('#weeklyTrendChart')) {
-                this.charts.weeklyTrend = new ApexCharts(document.querySelector('#weeklyTrendChart'), {
-                    series: [{
-                        name: 'Tasks Completed',
-                        data: weeklyData.map(w => w.completed)
-                    }],
-                    chart: {
-                        type: 'area',
-                        height: 300,
-                        zoom: {
-                            enabled: false
-                        }
-                    },
-                    dataLabels: {
-                        enabled: false
-                    },
-                    stroke: {
-                        curve: 'smooth',
-                        width: 3
-                    },
-                    xaxis: {
-                        categories: weeklyData.map(w => w.week)
-                    },
-                    colors: ['#10b981'],
-                    fill: {
-                        type: 'gradient',
-                        gradient: {
-                            opacityFrom: 0.6,
-                            opacityTo: 0.1
-                        }
-                    }
-                });
-                this.charts.weeklyTrend.render();
-            }
-        }
-    }
-}
-</script>
