@@ -5,7 +5,7 @@
         <div wire:key="task-{{ $task->id }}" 
              wire:click.stop="$dispatch('open-modal-{{ $status }}', { taskId: {{ $task->id }} })"
             class="task-card" draggable="true" data-task-id="{{ $task->id }}">
-            <div class="task-card-title">{{ $task->title }} - {{ $task->id }}</div>
+            <div class="task-card-title">{{ $task->title }}</div>
 
             <div class="task-card-meta">
                 @if($task->priority)
@@ -15,11 +15,27 @@
                 @endif
 
                 @if($task->due_date)
-                    <span>{{ $task->due_date->format('M d') }}</span>
+                    @php
+                        $dueDate = \Carbon\Carbon::parse($task->due_date);
+                        $isOverdue = $dueDate->isPast();
+                        $isDueSoon = !$isOverdue && $dueDate->diffInDays(now()) <= 3;
+                        
+                        if ($isOverdue) {
+                            $bgColor = 'rgba(239, 68, 68, 0.15)';
+                            $textColor = '#ef4444';
+                        } elseif ($isDueSoon) {
+                            $bgColor = 'rgba(245, 158, 11, 0.15)';
+                            $textColor = '#f59e0b';
+                        } else {
+                            $bgColor = 'rgba(88, 166, 255, 0.15)';
+                            $textColor = '#58a6ff';
+                        }
+                    @endphp
+                    <span style="background: {{ $bgColor }}; color: {{ $textColor }}; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">{{ $task->due_date->format('M d') }}</span>
                 @endif
 
                 @if($task->assignee)
-                    <span>{{ $task->assignee->name }}</span>
+                    <span style="background: rgba(139, 148, 158, 0.15); color: #8b949e; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">{{ $task->assignee->name }}</span>
                 @endif
             </div>
         </div>

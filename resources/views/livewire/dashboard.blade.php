@@ -1,6 +1,6 @@
 <!-- resources/views/livewire/dashboard.blade.php -->
 
-<div class="min-h-screen bg-[#161b22] text-[#c9d1d9] p-6 md:p-8" x-data wire:poll.15s>
+<div class="min-h-screen bg-[#161b22] text-[#c9d1d9] p-6 md:p-8" x-data wire:poll.15s.keep-alive>
     <!-- Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>

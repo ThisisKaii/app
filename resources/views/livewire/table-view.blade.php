@@ -1,8 +1,8 @@
-<div class="table-container">
+<div class="table-view-container" wire:poll.10s.keep-alive>
     <div class="table-header">
         <h2 class="table-title">Tasks Overview</h2>
         <div class="table-stats">
-            <button class="filter-btn" wire:click="toggleFilters">
+            <button class="filter-btn" wire:click="toggleFilters" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #21262d; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#30363d'; this.style.borderColor='#484f58';" onmouseout="this.style.background='#21262d'; this.style.borderColor='#30363d';">
                 <svg class="stat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -130,7 +130,23 @@
                             </td>
                             <td>
                                 @if($task->due_date)
-                                    <span class="date-text">{{ \Carbon\Carbon::parse($task->due_date)->format('M d, Y') }}</span>
+                                    @php
+                                        $dueDate = \Carbon\Carbon::parse($task->due_date);
+                                        $isOverdue = $dueDate->isPast();
+                                        $isDueSoon = !$isOverdue && $dueDate->diffInDays(now()) <= 3;
+                                        
+                                        if ($isOverdue) {
+                                            $bgColor = 'rgba(239, 68, 68, 0.15)';
+                                            $textColor = '#ef4444';
+                                        } elseif ($isDueSoon) {
+                                            $bgColor = 'rgba(245, 158, 11, 0.15)';
+                                            $textColor = '#f59e0b';
+                                        } else {
+                                            $bgColor = 'rgba(88, 166, 255, 0.15)';
+                                            $textColor = '#58a6ff';
+                                        }
+                                    @endphp
+                                    <span style="background: {{ $bgColor }}; color: {{ $textColor }}; padding: 4px 10px; border-radius: 4px; font-size: 0.875rem; display: inline-block;">{{ $dueDate->format('M d, Y') }}</span>
                                 @else
                                     <span class="text-muted">No date</span>
                                 @endif
