@@ -1,4 +1,4 @@
-<div class="table-container" wire:poll.10s>
+<div class="table-container" wire:poll.10s.keep-alive>
     <!-- Budget Summary Header -->
     <div class="budget-summary-header-compact">
         <div class="summary-stats">

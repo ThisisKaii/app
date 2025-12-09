@@ -1,4 +1,4 @@
-<div class="teams">
+<div class="teams" wire:poll.10s.keep-alive>
     <div class="teams-wrapper">
         <!-- Teams Header -->
         <div class="teams-header">
@@ -37,7 +37,6 @@
                             <div class="task-card {{ $task->priority ? 'priority-' . strtolower($task->priority) : '' }}"
                                 style="cursor: pointer;" wire:click="$dispatch('openTaskModal', { taskId: {{ $task->id }} })">
                                 <div class="task-card-header">
-                                    <div class="status-badge {{ $task->status }}"></div>
                                     <div class="task-card-title">{{ $task->title }}</div>
                                 </div>
 
@@ -93,10 +92,6 @@
             <div class="kanban-column unassigned">
                 <div class="column-header">
                     <div class="team-member-info">
-                        <div class="team-member-avatar"
-                            style="background: linear-gradient(135deg, #6e7681 0%, #484f58 100%);">
-                            
-                        </div>
                         <div class="team-member-details">
                             <div class="team-member-name">
                                 <span>Unassigned</span>
@@ -119,7 +114,6 @@
                         <div class="task-card {{ $task->priority ? 'priority-' . strtolower($task->priority) : '' }}"
                             style="cursor: pointer;" wire:click="$dispatch('openTaskModal', { taskId: {{ $task->id }} })">
                             <div class="task-card-header">
-                                <div class="status-badge {{ $task->status }}"></div>
                                 <div class="task-card-title">{{ $task->title }}</div>
                             </div>
 

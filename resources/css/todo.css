@@ -1308,10 +1308,12 @@ body {
 
 /* Team Member Columns - Horizontal Scroll */
 .teams .kanban-container {
-    display: flex;
-    gap: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem;
     overflow-x: auto;
-    padding-bottom: 1rem;
+    min-height: 500px;
     align-items: flex-start;
 }
 
@@ -2018,7 +2020,7 @@ body {
 
 /* Filter Panel Styles */
 .filter-btn {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
@@ -2026,15 +2028,21 @@ body {
     color: #c9d1d9;
     border: 1px solid #30363d;
     border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 600;
     cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
     transition: all 0.2s;
 }
 
 .filter-btn:hover {
     background: #30363d;
-    border-color: #58a6ff;
+    border-color: #484f58;
+}
+
+.filter-btn.active {
+    background: #238636;
+    border-color: #2ea043;
+    color: white;
 }
 
 .add-task-btn {
