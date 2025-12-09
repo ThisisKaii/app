@@ -7,6 +7,7 @@
     @vite(['resources/css/todo.css', 'resources/css/app.css', 'resources/js/app.js'])
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Todobido</title>
+
     @livewireStyles
 
     <style>
@@ -495,6 +496,13 @@
                     </svg>
                     <span>Activity Log</span>
                 </a>
+                <a class="sidebar-link" data-view="dashboard">
+                    <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
             @else
                 {{-- Normal Board Navigation --}}
                 <a class="sidebar-link active" data-view="board">
@@ -535,6 +543,13 @@
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span>Activity Log</span>
+                </a>
+                <a class="sidebar-link" data-view="dashboard">
+                    <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Dashboard</span>
                 </a>
             @endif
         </nav>
