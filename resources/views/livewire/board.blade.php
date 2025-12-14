@@ -1,4 +1,4 @@
-<div>
+<div wire:poll.5s>
     <!-- Board View -->
     <div class="container">
         <div id="board-view" class="kanban-container">
@@ -23,10 +23,15 @@
                         @foreach($groups->where('status', $statusKey) as $group)
                             <!-- Group Card (Draggable) -->
                             <div wire:key="group-{{ $group->id }}" 
-                                 draggable="true" 
+                                 @can('update', $group)
+                                     draggable="true"
+                                     style="cursor: grab; display: flex; flex-direction: column; gap: 10px; background-color: #161b22; border: 1px solid #30363d; padding: 12px; border-radius: 6px; margin-bottom: 10px;"
+                                 @else
+                                     draggable="false"
+                                     style="cursor: not-allowed; display: flex; flex-direction: column; gap: 10px; background-color: #161b22; border: 1px solid #30363d; padding: 12px; border-radius: 6px; margin-bottom: 10px; opacity: 0.9;"
+                                 @endcan
                                  class="task-card group-card" 
-                                 data-group-id="{{ $group->id }}"
-                                 style="cursor: grab; display: flex; flex-direction: column; gap: 10px; background-color: #161b22; border: 1px solid #30363d; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
+                                 data-group-id="{{ $group->id }}">
                                 
                                 <!-- Group Title -->
                                 <div class="group-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -41,7 +46,12 @@
                                     @foreach($group->tasks as $task)
                                         <div class="task-item" 
                                              wire:key="task-{{ $task->id }}"
-                                             wire:click.stop="$dispatch('open-task-modal', { taskId: {{ $task->id }} })"
+                                             @if($canEdit)
+                                                 wire:click.stop="$dispatch('open-task-modal', { taskId: {{ $task->id }} })"
+                                             @else
+                                                 wire:click.stop="takeTask({{ $task->id }})"
+                                                 title="Click to take this task"
+                                             @endif
                                              style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid transparent;"
                                              onmouseover="this.style.borderColor='#30363d'"
                                              onmouseout="this.style.borderColor='transparent'">
@@ -68,19 +78,23 @@
                                     @endforeach
                                 </div>
 
-                                <!-- Add Task Button -->
+                                <!-- Add Task Button - Only for Owner/Admin -->
+                                @can('createTask', $board)
                                 <button class="add-subitem-btn" 
                                         wire:click="$dispatch('open-task-modal', { groupId: {{ $group->id }} })"
                                         style="background: none; border: 1px dashed #30363d; color: #8b949e; padding: 6px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; width: 100%; text-align: center; margin-top: 4px;">
                                     + Add Item
                                 </button>
+                                @endcan
                             </div>
                         @endforeach
                         
-                        <!-- New Group Button -->
+                        <!-- New Group Button - Only for Owner/Admin -->
+                        @can('createTask', $board)
                         <button class="add-card" wire:click="$dispatch('open-group-modal', { status: '{{ $statusKey }}' })">
                             <span>+</span> New Title
                         </button>
+                        @endcan
                     </div>
                 </div>
             @endforeach
@@ -91,126 +105,114 @@
     @livewire('add-modal', ['boardId' => $board->id], key('add-modal')) 
 
     <script>
-    // Store global state
-    window.dragState = {
-        isDragging: false,
-        draggedElement: null,
-        draggedGroupId: null,
-        sourceStatus: null
-    };
+    // Initialize Drag and Drop (Global Delegation)
+    if (!window.boardDnDInitialized) {
+        window.boardDnDInitialized = true;
 
-    document.addEventListener('livewire:initialized', () => {
-        initializeDragAndDrop();
-    });
+        // Global State
+        window.dragState = {
+            isDragging: false,
+            draggedElement: null,
+            draggedGroupId: null,
+            sourceStatus: null
+        };
 
-    function initializeDragAndDrop() {
-        const boardView = document.getElementById('board-view');
-        if (!boardView) return;
-
-        // Clean up existing listeners to avoid duplicates if any
-        boardView.removeEventListener('dragstart', handleDragStart);
-        boardView.removeEventListener('dragend', handleDragEnd);
-        boardView.removeEventListener('dragover', handleDragOver);
-        boardView.removeEventListener('drop', handleDrop);
-        boardView.removeEventListener('dragenter', handleDragEnter);
-        boardView.removeEventListener('dragleave', handleDragLeave);
-
-        // Attach listeners to the container (delegation)
-        boardView.addEventListener('dragstart', handleDragStart);
-        boardView.addEventListener('dragend', handleDragEnd);
-        boardView.addEventListener('dragover', handleDragOver);
-        boardView.addEventListener('drop', handleDrop);
-        boardView.addEventListener('dragenter', handleDragEnter);
-        boardView.addEventListener('dragleave', handleDragLeave);
-    }
-
-    function handleDragStart(e) {
-        const card = e.target.closest('.group-card');
-        if (!card) return;
+        // --- Event Listeners (Document Level) ---
         
-        // Required for Firefox
-        e.dataTransfer.setData('text/plain', card.dataset.groupId);
-        e.dataTransfer.effectAllowed = 'move';
-        
-        window.dragState.isDragging = true;
-        window.dragState.draggedElement = card;
-        window.dragState.draggedGroupId = card.dataset.groupId;
-        
-        const sourceContainer = card.closest('.cards-container');
-        window.dragState.sourceStatus = sourceContainer ? sourceContainer.dataset.status : null;
-        
-        setTimeout(() => {
-            card.classList.add('dragging');
-        }, 0);
-    }
+        document.addEventListener('dragstart', function(e) {
+            const card = e.target.closest('.group-card');
+            if (!card) return;
 
-    function handleDragEnd(e) {
-        const card = e.target.closest('.group-card');
-        if (card) {
-            card.classList.remove('dragging');
-        }
-        
-        document.querySelectorAll('.kanban-column').forEach(col => {
-            col.style.backgroundColor = '';
+            // Required for Firefox
+            e.dataTransfer.setData('text/plain', card.dataset.groupId);
+            e.dataTransfer.effectAllowed = 'move';
+
+            window.dragState.isDragging = true;
+            window.dragState.draggedElement = card;
+            window.dragState.draggedGroupId = card.dataset.groupId;
+
+            const sourceContainer = card.closest('.cards-container');
+            window.dragState.sourceStatus = sourceContainer ? sourceContainer.dataset.status : null;
+
+            // Visual feedback
+            setTimeout(() => card.classList.add('dragging'), 0);
         });
-        
-        window.dragState.isDragging = false;
-        window.dragState.draggedElement = null;
-        window.dragState.draggedGroupId = null;
-    }
 
-    function handleDragOver(e) {
-        if (!window.dragState.isDragging) return;
-        e.preventDefault(); // Allow drop
-        
-        const column = e.target.closest('.kanban-column');
-        if (column) {
-            column.style.backgroundColor = 'rgba(88, 166, 255, 0.05)';
-        }
-    }
+        document.addEventListener('dragend', function(e) {
+            const card = e.target.closest('.group-card');
+            if (card) {
+                card.classList.remove('dragging');
+            }
+            
+            // Clean up visual cues
+            document.querySelectorAll('.kanban-column').forEach(col => {
+                col.style.backgroundColor = '';
+            });
 
-    function handleDragEnter(e) {
-        if (!window.dragState.isDragging) return;
-        const column = e.target.closest('.kanban-column');
-        if (column) {
-            column.style.backgroundColor = 'rgba(88, 166, 255, 0.1)';
-        }
-    }
+            window.dragState.isDragging = false;
+            window.dragState.draggedElement = null;
+            window.dragState.draggedGroupId = null;
+        });
 
-    function handleDragLeave(e) {
-        const column = e.target.closest('.kanban-column');
-        // Only clear if we are leaving the column (and not entering a child)
-        if (column && !column.contains(e.relatedTarget)) {
+        document.addEventListener('dragover', function(e) {
+            if (!window.dragState.isDragging) return;
+            
+            const column = e.target.closest('.kanban-column');
+            if (column) {
+                e.preventDefault(); // Allow drop
+                column.style.backgroundColor = 'rgba(88, 166, 255, 0.05)';
+            }
+        });
+
+        document.addEventListener('dragenter', function(e) {
+            if (!window.dragState.isDragging) return;
+            const column = e.target.closest('.kanban-column');
+            if (column) {
+                column.style.backgroundColor = 'rgba(88, 166, 255, 0.1)';
+            }
+        });
+
+        document.addEventListener('dragleave', function(e) {
+            const column = e.target.closest('.kanban-column');
+            if (column && !column.contains(e.relatedTarget)) {
+                column.style.backgroundColor = '';
+            }
+        });
+
+        document.addEventListener('drop', function(e) {
+            if (!window.dragState.isDragging) return;
+            const column = e.target.closest('.kanban-column');
+            if (!column) return;
+
+            e.preventDefault();
             column.style.backgroundColor = '';
-        }
+
+            const groupId = window.dragState.draggedGroupId;
+            const cardsContainer = column.querySelector('.cards-container');
+            const newStatus = cardsContainer.dataset.status;
+
+            // Calculate new order
+            const afterElement = getDragAfterElement(cardsContainer, e.clientY);
+            const allCards = Array.from(cardsContainer.querySelectorAll('.group-card:not(.dragging)'));
+            let newOrder = afterElement ? allCards.indexOf(afterElement) : allCards.length;
+
+            // Call Livewire Component
+            // Use the root element's wire:id
+            const root = document.getElementById('board-view').closest('[wire\\:id]');
+            const component = root ? Livewire.find(root.getAttribute('wire:id')) : null;
+            
+            if (component) {
+                component.call('updateGroupStatus', groupId, newStatus, newOrder);
+            } else {
+                console.error('Livewire component not found');
+            }
+        });
     }
 
-    function handleDrop(e) {
-        e.preventDefault();
-        
-        const column = e.target.closest('.kanban-column');
-        if (!column) return;
-        
-        column.style.backgroundColor = '';
-        
-        if (!window.dragState.draggedGroupId) return;
-        
-        const cardsContainer = column.querySelector('.cards-container');
-        const newStatus = cardsContainer.dataset.status;
-        const groupId = window.dragState.draggedGroupId;
-        
-        // Calculate position
-        const afterElement = getDragAfterElement(cardsContainer, e.clientY);
-        const allCards = Array.from(cardsContainer.querySelectorAll('.group-card:not(.dragging)'));
-        let newOrder = afterElement ? allCards.indexOf(afterElement) : allCards.length;
-        
-        // Optimistic UI update (optional, but let's trust Livewire for now)
-        @this.call('updateGroupStatus', groupId, newStatus, newOrder);
-    }
-
+    // Scalar Helper
     function getDragAfterElement(container, y) {
         const draggableElements = [...container.querySelectorAll('.group-card:not(.dragging)')];
-        
+
         return draggableElements.reduce((closest, child) => {
             const box = child.getBoundingClientRect();
             const offset = y - box.top - box.height / 2;

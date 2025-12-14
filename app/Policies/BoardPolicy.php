@@ -73,8 +73,9 @@ class BoardPolicy
      */
     public function createTask(User $user, Board $board)
     {
-        // Any board member can create tasks
-        return $board->members()->where('user_id', $user->id)->exists();
+        // Only owner and admin can create tasks
+        $member = $board->members()->where('user_id', $user->id)->first();
+        return $member && in_array($member->pivot->role, ['owner', 'admin']);
     }
 
     /**
@@ -82,8 +83,9 @@ class BoardPolicy
      */
     public function updateTask(User $user, Board $board)
     {
-        // Any board member can update tasks
-        return $board->members()->where('user_id', $user->id)->exists();
+        // Only owner and admin can update tasks - members are view-only
+        $member = $board->members()->where('user_id', $user->id)->first();
+        return $member && in_array($member->pivot->role, ['owner', 'admin']);
     }
 
     /**
@@ -91,7 +93,8 @@ class BoardPolicy
      */
     public function deleteTask(User $user, Board $board)
     {
-        // Any board member can delete tasks (you can make this more restrictive if needed)
-        return $board->members()->where('user_id', $user->id)->exists();
+        // Only owner and admin can delete tasks
+        $member = $board->members()->where('user_id', $user->id)->first();
+        return $member && in_array($member->pivot->role, ['owner', 'admin']);
     }
 }

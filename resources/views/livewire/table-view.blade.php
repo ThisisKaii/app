@@ -1,4 +1,4 @@
-<div class="table-view-container" wire:poll.10s.keep-alive>
+<div class="table-view-container" wire:poll.5s.keep-alive>
     <div class="table-header">
         <h2 class="table-title">Tasks Overview</h2>
         <div class="table-stats">
@@ -10,7 +10,8 @@
                 Filter
             </button>
 
-            <button class="add-task-btn" wire:click="$dispatch('open-group-modal')">
+            <button class="add-task-btn" wire:click="$dispatch('open-group-modal')" 
+                    style="background-color: #238636; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; display: flex; align-items: center; gap: 0.5rem; font-weight: 500; cursor: pointer; transition: background-color 0.2s;">
                 <svg class="stat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
@@ -55,10 +56,7 @@
                     <label class="filter-label">Assignee</label>
                     <select class="filter-select" wire:model.live="assigneeFilter">
                         <option value="">All Assignees</option>
-                        @php
-                            $uniqueAssignees = collect($tasks)->pluck('assignee')->filter()->unique('name')->sortBy('name');
-                        @endphp
-                        @foreach($uniqueAssignees as $assignee)
+                        @foreach($users as $assignee)
                             <option value="{{ $assignee->name }}">{{ $assignee->name }}</option>
                         @endforeach
                     </select>
@@ -183,9 +181,15 @@
                                                             <input type="checkbox" 
                                                                    class="modern-checkbox"
                                                                    wire:click="toggleTaskCompletion({{ $task->id }})"
-                                                                   {{ $task->completed_at ? 'checked' : '' }}>
-                                                            <span wire:click="$dispatch('open-task-modal', { taskId: {{ $task->id }} })"
-                                                                  style="cursor: pointer; color: #c9d1d9; font-size: 0.9rem; {{ $task->completed_at ? 'text-decoration: line-through; opacity: 0.5;' : '' }}">
+                                                                   {{ $task->status === 'published' ? 'checked' : '' }}>
+                                                            <span 
+                                                                  @if($canEdit)
+                                                                      wire:click="$dispatch('open-task-modal', { taskId: {{ $task->id }} })"
+                                                                  @else
+                                                                      wire:click="takeTask({{ $task->id }})"
+                                                                      title="Click to claim this task"
+                                                                  @endif
+                                                                  style="cursor: pointer; color: #c9d1d9; font-size: 0.9rem; {{ $task->status === 'published' ? 'text-decoration: line-through; opacity: 0.5;' : '' }}">
                                                                 {{ $task->type ?: 'General Task' }}
                                                             </span>
                                                         </div>
@@ -234,7 +238,7 @@
                                             </div>
                                         @else
                                             <div style="text-align: center; padding: 1rem; color: #484f58; font-size: 0.9rem;">
-                                                No sub-tasks yet. <span wire:click="$dispatch('open-group-modal', { groupId: {{ $group->id }} })" style="color: #58a6ff; cursor: pointer; text-decoration: underline;">Add one</span>
+                                                No sub-tasks yet. <span wire:click="$dispatch('open-task-modal', { groupId: {{ $group->id }} })" style="color: #58a6ff; cursor: pointer; text-decoration: underline;">Add one</span>
                                             </div>
                                         @endif
 
