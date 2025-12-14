@@ -75,7 +75,7 @@ class Dashboard extends Component
 
     protected function loadNormalDashboard()
     {
-        $tasks = $this->board->tasks()->with(['assignee', 'tags'])->get();
+        $tasks = $this->board->tasks()->with(['assignee', 'users', 'tags'])->get();
 
         // Apply date filter if set
         if ($this->startDate && $this->endDate) {
@@ -87,7 +87,8 @@ class Dashboard extends Component
         // Basic metrics
         $totalTasks = $tasks->count();
         $completedTasks = $tasks->where('status', 'published')->count();
-        $inProgressTasks = $tasks->where('status', 'in_progress')->count();
+        // Combine To Do and In Progress into "Active" tasks
+        $activeTasks = $tasks->whereIn('status', ['to_do', 'in_progress'])->count();
         $overdueTasks = $tasks->filter(function ($task) {
             return $task->due_date && $task->due_date->isPast() && $task->status !== 'published';
         })->count();
@@ -124,20 +125,50 @@ class Dashboard extends Component
             ) && $task->status !== 'published';
         })->count();
 
-        // Team activity
-        $assigneeStats = $tasks->whereNotNull('assignee_id')
-            ->groupBy('assignee_id')
-            ->map(function ($group) {
-                $total = $group->count();
-                $completed = $group->where('status', 'published')->count();
-                $assignee = $group->first()->assignee;
-                return [
-                    'assignee' => $assignee->name,
-                    'is_active' => $assignee->is_active ?? false,
-                    'total' => $total,
-                    'completed' => $completed,
-                    'percentage' => $total > 0 ? round(($completed / $total) * 100) : 0,
-                ];
+        // Team activity - Using new multi-assignee relationship
+        $userTaskCounts = [];
+        foreach ($tasks as $task) {
+            // Use users() relationship (multi-assignee) if available, fallback to assignee_id
+            $taskUsers = $task->users;
+            
+            if ($taskUsers && $taskUsers->count() > 0) {
+                foreach ($taskUsers as $user) {
+                    $userId = $user->id;
+                    if (!isset($userTaskCounts[$userId])) {
+                        $userTaskCounts[$userId] = [
+                            'assignee' => $user->name,
+                            'is_active' => $user->is_active ?? false,
+                            'total' => 0,
+                            'completed' => 0,
+                        ];
+                    }
+                    $userTaskCounts[$userId]['total']++;
+                    if ($task->status === 'published') {
+                        $userTaskCounts[$userId]['completed']++;
+                    }
+                }
+            } elseif ($task->assignee_id && $task->assignee) {
+                // Fallback to old single assignee
+                $userId = $task->assignee_id;
+                if (!isset($userTaskCounts[$userId])) {
+                    $userTaskCounts[$userId] = [
+                        'assignee' => $task->assignee->name,
+                        'is_active' => $task->assignee->is_active ?? false,
+                        'total' => 0,
+                        'completed' => 0,
+                    ];
+                }
+                $userTaskCounts[$userId]['total']++;
+                if ($task->status === 'published') {
+                    $userTaskCounts[$userId]['completed']++;
+                }
+            }
+        }
+        
+        $assigneeStats = collect($userTaskCounts)
+            ->map(function ($stat) {
+                $stat['percentage'] = $stat['total'] > 0 ? round(($stat['completed'] / $stat['total']) * 100) : 0;
+                return $stat;
             })
             ->sortByDesc('completed')
             ->take(5)
@@ -163,7 +194,7 @@ class Dashboard extends Component
         }
 
         // Recommended Task
-        $recommendedTask = $tasks->filter(function ($task) {
+        $recommendedTasks = $tasks->filter(function ($task) {
             return $task->status !== 'published';
         })->sort(function ($a, $b) {
             // Sort by Priority (High > Medium > Low > None)
@@ -183,7 +214,7 @@ class Dashboard extends Component
             if ($b->due_date) return 1;
 
             return 0;
-        })->first();
+        })->take(5);
 
         // Recent tasks (last 10 updated)
         $recentTasks = $tasks->sortByDesc('updated_at')->take(10)->values();
@@ -191,7 +222,7 @@ class Dashboard extends Component
         $this->dashboardData = [
             'totalTasks' => $totalTasks,
             'completedTasks' => $completedTasks,
-            'inProgressTasks' => $inProgressTasks,
+            'activeTasks' => $activeTasks,
             'overdueTasks' => $overdueTasks,
             'completionRate' => $completionRate,
             'dueThisWeek' => $dueThisWeek,
@@ -199,7 +230,7 @@ class Dashboard extends Component
             'unassignedTasks' => $unassignedTasks,
             'weeklyTrend' => $weeklyTrend,
             'recentTasks' => $recentTasks,
-            'recommendedTask' => $recommendedTask,
+            'recommendedTasks' => $recommendedTasks,
             'statusDistribution' => $statusDistribution,
             'priorityBreakdown' => $priorityBreakdown,
             'assigneeStats' => $assigneeStats,
@@ -231,11 +262,17 @@ class Dashboard extends Component
         }
 
         // Basic financial metrics
+        // Basic financial metrics
         $totalBudget = $budget->total_budget;
-        $totalAllocated = $categories->sum('amount_estimated');
-        $totalSpent = $categories->sum(function ($category) {
-            return $category->expenses->sum('amount');
-        });
+        
+        $totalAllocated = $categories->whereIn('status', ['pending', 'approved', 'completed'])
+            ->sum('amount_estimated');
+            
+        $totalSpent = $categories->where('status', 'completed')
+            ->sum(function ($category) {
+                return $category->expenses->sum('amount');
+            });
+            
         $remaining = $totalBudget - $totalSpent;
 
         // Percentages

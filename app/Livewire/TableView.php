@@ -69,7 +69,25 @@ class TableView extends Component
     {
         try {
             $query = \App\Models\TaskGroup::where('board_id', $this->boardId)
-                ->with(['tasks.users', 'tasks.tags'])
+                ->with(['tasks' => function($query) {
+                    $query->orderBy('order')->with('users', 'tags');
+                    
+                    // Apply filters to the displayed tasks
+                    if ($this->priorityFilter) {
+                        $query->where('priority', $this->priorityFilter);
+                    }
+                    if ($this->assigneeFilter) {
+                        $query->whereHas('users', function ($q) {
+                            $q->where('name', $this->assigneeFilter);
+                        });
+                    }
+                    if ($this->searchFilter) {
+                        $query->where(function($q) {
+                            $q->where('title', 'like', '%' . $this->searchFilter . '%')
+                              ->orWhere('type', 'like', '%' . $this->searchFilter . '%');
+                        });
+                    }
+                }])
                 ->withCount(['tasks', 'tasks as completed_tasks_count' => function ($query) {
                     $query->whereNotNull('completed_at');
                 }])
@@ -180,20 +198,46 @@ class TableView extends Component
     public function toggleTaskCompletion($taskId)
     {
         try {
-            // Check authorization
-            if (!Gate::allows('updateTask', $this->board)) {
-                return;
+            $task = Task::with(['group', 'users'])->find($taskId);
+            if (!$task) return;
+
+            // Permission check
+            $userId = auth()->id();
+            $member = $this->board->members()->where('user_id', $userId)->first();
+            
+            if (!$member) {
+                return; // Not a board member
+            }
+            
+            $isOwnerOrAdmin = in_array($member->pivot->role, ['owner', 'admin']);
+            $isAssignedToMe = $task->assignee_id == $userId || 
+                              $task->users->contains('id', $userId);
+            
+            // Owner/Admin can toggle any task, members can only toggle their assigned tasks
+            if (!$isOwnerOrAdmin && !$isAssignedToMe) {
+                return; // Members can't toggle unassigned tasks
             }
 
-            $task = Task::find($taskId);
+            // Toggle status like Individual view
+            $previousStatus = $task->status;
+            $newStatus = $previousStatus === 'published' ? 'in_progress' : 'published';
+            
+            $task->status = $newStatus;
+            $task->completed_at = $newStatus === 'published' ? now() : null;
+            $task->save();
 
-            if ($task) {
-                $task->update([
-                    'completed_at' => $task->completed_at ? null : now()
-                ]);
-
-                $this->dispatch('taskSaved'); // Trigger refresh
+            // Handle parent group status - if not all tasks complete, move group to in_progress
+            $group = $task->group;
+            if ($group) {
+                $allTasksCompleted = $group->tasks()->where('status', '!=', 'published')->count() === 0;
+                
+                if (!$allTasksCompleted && $group->status === 'published') {
+                    $group->status = 'in_progress';
+                    $group->save();
+                }
             }
+
+            $this->dispatch('taskSaved'); // Trigger refresh
         } catch (\Exception $e) {
             Log::error('Task completion toggle error: ' . $e->getMessage());
         }
@@ -416,11 +460,39 @@ class TableView extends Component
         $this->taskId = null;
     }
 
+    // Check if current user can edit (is owner/admin)
+    public function getCanEditProperty()
+    {
+        $member = $this->board->members()->where('user_id', auth()->id())->first();
+        return $member && in_array($member->pivot->role, ['owner', 'admin']);
+    }
+
+    // Allow members to take (assign to themselves) a task
+    public function takeTask($taskId)
+    {
+        $task = Task::find($taskId);
+        if (!$task) return;
+        
+        $userId = auth()->id();
+        
+        // Check if user is already assigned
+        if ($task->users()->where('user_id', $userId)->exists()) {
+            // Already assigned - remove assignment (toggle off)
+            $task->users()->detach($userId);
+        } else {
+            // Not assigned - add assignment
+            $task->users()->attach($userId);
+        }
+        
+        $this->dispatch('taskSaved');
+    }
+
     public function render()
     {
         return view('livewire.table-view', [
             'groups' => $this->getGroups(),
             'users' => $this->getUsers(),
+            'canEdit' => $this->canEdit,
         ]);
     }
 }
