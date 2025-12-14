@@ -11,12 +11,16 @@ class Task extends Model
 
     protected $fillable = [
         'board_id',
+        'group_id',
         'user_id',
-        'title',
-        'status',
+        'title', // This might be deprecated if group has title, but maybe task keeps "content" or "type" as title? 
+                 // User said "Title is treated as one category and the type are like the sub category".
+                 // So actually Group->Title, Task->Type.
+                 // But Task table still has 'type'.
+        'status', // Deprecated? Group has status.
         'type',
         'priority',
-        'assignee_id',
+        'assignee_id', // Deprecated
         'due_date',
         'url',
         'description',
@@ -34,14 +38,29 @@ class Task extends Model
     {
         return $this->belongsTo(Board::class);
     }
+    
+    public function group()
+    {
+        return $this->belongsTo(TaskGroup::class, 'group_id');
+    }
+
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class); // Key creator
     }
+    
+    // Deprecated single assignee
     public function assignee()
     {
         return $this->belongsTo(User::class, 'assignee_id');
     }
+
+    // New multi-assignee
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'task_user');
+    }
+
     public function tags()
     {
         return $this->belongsToMany(Tag::class, 'task_tag');

@@ -1,290 +1,225 @@
-<!-- Board View -->
-<div class="container">
-    <div id="board-view" class="kanban-container">
-        <!-- Todo Column -->
-        <div class="kanban-column" data-status="to_do">
-            <div class="column-header">
-                <span class="status-badge todo"></span>
-                To do
-                <span class="section-count">{{ $task->where('status', 'to_do')->count() }}</span>
-            </div>
-            <div class="cards-container" data-status="to_do">
-                @livewire('edit-modal', ['board' => $board, 'status' => 'to_do'], key('edit-modal-to_do'))
-            </div>
-        </div>
+<div>
+    <!-- Board View -->
+    <div class="container">
+        <div id="board-view" class="kanban-container">
+            @foreach(['to_do' => 'To do', 'in_review' => 'In review', 'in_progress' => 'In progress', 'published' => 'Published'] as $statusKey => $statusLabel)
+            @php
+                $statusClass = match($statusKey) {
+                    'to_do' => 'todo',
+                    'in_review' => 'review',
+                    'in_progress' => 'progress',
+                    'published' => 'published',
+                    default => 'todo'
+                };
+            @endphp
+                <div class="kanban-column" data-status="{{ $statusKey }}">
+                    <div class="column-header">
+                        <span class="status-badge {{ $statusClass }}"></span>
+                        {{ $statusLabel }}
+                        <span class="section-count">{{ $groups->where('status', $statusKey)->count() }}</span>
+                    </div>
+                    
+                    <div class="cards-container" data-status="{{ $statusKey }}">
+                        @foreach($groups->where('status', $statusKey) as $group)
+                            <!-- Group Card (Draggable) -->
+                            <div wire:key="group-{{ $group->id }}" 
+                                 draggable="true" 
+                                 class="task-card group-card" 
+                                 data-group-id="{{ $group->id }}"
+                                 style="cursor: grab; display: flex; flex-direction: column; gap: 10px; background-color: #161b22; border: 1px solid #30363d; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
+                                
+                                <!-- Group Title -->
+                                <div class="group-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <h3 style="margin: 0; font-size: 1rem; color: #f0f6fc; font-weight: 600;">{{ $group->title }}</h3>
+                                    <button class="btn-icon" style="color: #8b949e;" wire:click="$dispatch('open-group-modal', { groupId: {{ $group->id }} })">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                    </button>
+                                </div>
 
-        <!-- In review Column -->
-        <div class="kanban-column" data-status="in_review">
-            <div class="column-header">
-                <span class="status-badge review"></span>
-                In review
-                <span class="section-count">{{ $task->where('status', 'in_review')->count() }}</span>
-            </div>
-            <div class="cards-container" data-status="in_review">
-                @livewire('edit-modal', ['board' => $board, 'status' => 'in_review'], key('edit-modal-in_review'))
-            </div>
-        </div>
+                                <!-- Tasks List (Types) -->
+                                <div class="group-tasks" style="display: flex; flex-direction: column; gap: 6px;">
+                                    @foreach($group->tasks as $task)
+                                        <div class="task-item" 
+                                             wire:key="task-{{ $task->id }}"
+                                             wire:click.stop="$dispatch('open-task-modal', { taskId: {{ $task->id }} })"
+                                             style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid transparent;"
+                                             onmouseover="this.style.borderColor='#30363d'"
+                                             onmouseout="this.style.borderColor='transparent'">
+                                            
+                                            <span class="task-type" style="font-size: 0.9rem; color: #c9d1d9;">
+                                                {{ $task->type ?: 'No Type' }}
+                                            </span>
 
-        <!-- In progress Column -->
-        <div class="kanban-column" data-status="in_progress">
-            <div class="column-header">
-                <span class="status-badge progress"></span>
-                In progress
-                <span class="section-count">{{ $task->where('status', 'in_progress')->count() }}</span>
-            </div>
-            <div class="cards-container" data-status="in_progress">
-                @livewire('edit-modal', ['board' => $board, 'status' => 'in_progress'], key('edit-modal-in_progress'))
-            </div>
-        </div>
+                                            <!-- Assignees Avatars -->
+                                            <div class="task-assignees" style="display: flex; gap: -4px;">
+                                                @foreach($task->users->take(3) as $user)
+                                                    <div class="user-avatar-sm" title="{{ $user->name }}"
+                                                         style="width: 20px; height: 20px; border-radius: 50%; background: #30363d; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; border: 1px solid #161b22; margin-left: -6px;">
+                                                        {{ substr($user->name, 0, 1) }}
+                                                    </div>
+                                                @endforeach
+                                                @if($task->users->count() > 3)
+                                                    <div class="user-avatar-sm" style="width: 20px; height: 20px; border-radius: 50%; background: #21262d; color: #8b949e; display: flex; align-items: center; justify-content: center; font-size: 9px; border: 1px solid #161b22; margin-left: -6px;">
+                                                        +{{ $task->users->count() - 3 }}
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
 
-        <!-- Published Column -->
-        <div class="kanban-column" data-status="published">
-            <div class="column-header">
-                <span class="status-badge published"></span>
-                Published
-                <span class="section-count">{{ $task->where('status', 'published')->count() }}</span>
-            </div>
-            <div class="cards-container" data-status="published">
-                @livewire('edit-modal', ['board' => $board, 'status' => 'published'], key('edit-modal-published'))
-            </div>
+                                <!-- Add Task Button -->
+                                <button class="add-subitem-btn" 
+                                        wire:click="$dispatch('open-task-modal', { groupId: {{ $group->id }} })"
+                                        style="background: none; border: 1px dashed #30363d; color: #8b949e; padding: 6px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; width: 100%; text-align: center; margin-top: 4px;">
+                                    + Add Item
+                                </button>
+                            </div>
+                        @endforeach
+                        
+                        <!-- New Group Button -->
+                        <button class="add-card" wire:click="$dispatch('open-group-modal', { status: '{{ $statusKey }}' })">
+                            <span>+</span> New Title
+                        </button>
+                    </div>
+                </div>
+            @endforeach
         </div>
     </div>
-</div>
 
-<script>
-// Store global state
-window.dragState = {
-    isDragging: false,
-    draggedElement: null,
-    draggedTaskId: null,
-    sourceStatus: null
-};
+    <!-- Modals -->
+    @livewire('add-modal', ['boardId' => $board->id], key('add-modal')) 
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    initializeDragAndDrop();
-});
+    <script>
+    // Store global state
+    window.dragState = {
+        isDragging: false,
+        draggedElement: null,
+        draggedGroupId: null,
+        sourceStatus: null
+    };
 
-// Reinitialize after Livewire updates
-document.addEventListener('livewire:initialized', () => {
-    Livewire.hook('morph.updated', () => {
-        setTimeout(() => {
-            console.log('Reinitializing after Livewire morph');
-            initializeDragAndDrop();
-        }, 50);
+    document.addEventListener('livewire:initialized', () => {
+        initializeDragAndDrop();
     });
-});
 
-function initializeDragAndDrop() {
-    const boardView = document.getElementById('board-view');
-    if (!boardView) {
-        console.log('Board view not found');
-        return;
+    function initializeDragAndDrop() {
+        const boardView = document.getElementById('board-view');
+        if (!boardView) return;
+
+        // Clean up existing listeners to avoid duplicates if any
+        boardView.removeEventListener('dragstart', handleDragStart);
+        boardView.removeEventListener('dragend', handleDragEnd);
+        boardView.removeEventListener('dragover', handleDragOver);
+        boardView.removeEventListener('drop', handleDrop);
+        boardView.removeEventListener('dragenter', handleDragEnter);
+        boardView.removeEventListener('dragleave', handleDragLeave);
+
+        // Attach listeners to the container (delegation)
+        boardView.addEventListener('dragstart', handleDragStart);
+        boardView.addEventListener('dragend', handleDragEnd);
+        boardView.addEventListener('dragover', handleDragOver);
+        boardView.addEventListener('drop', handleDrop);
+        boardView.addEventListener('dragenter', handleDragEnter);
+        boardView.addEventListener('dragleave', handleDragLeave);
     }
 
-    // Use event delegation on the board container
-    boardView.removeEventListener('dragstart', handleDragStart);
-    boardView.removeEventListener('dragend', handleDragEnd);
-    boardView.addEventListener('dragstart', handleDragStart);
-    boardView.addEventListener('dragend', handleDragEnd);
-
-    // Set up columns
-    const columns = boardView.querySelectorAll('.kanban-column');
-    console.log(`Found ${columns.length} columns`);
-    
-    columns.forEach(column => {
-        column.removeEventListener('dragover', handleDragOver);
-        column.removeEventListener('drop', handleDrop);
-        column.removeEventListener('dragleave', handleDragLeave);
+    function handleDragStart(e) {
+        const card = e.target.closest('.group-card');
+        if (!card) return;
         
-        column.addEventListener('dragover', handleDragOver);
-        column.addEventListener('drop', handleDrop);
-        column.addEventListener('dragleave', handleDragLeave);
-    });
+        // Required for Firefox
+        e.dataTransfer.setData('text/plain', card.dataset.groupId);
+        e.dataTransfer.effectAllowed = 'move';
+        
+        window.dragState.isDragging = true;
+        window.dragState.draggedElement = card;
+        window.dragState.draggedGroupId = card.dataset.groupId;
+        
+        const sourceContainer = card.closest('.cards-container');
+        window.dragState.sourceStatus = sourceContainer ? sourceContainer.dataset.status : null;
+        
+        setTimeout(() => {
+            card.classList.add('dragging');
+        }, 0);
+    }
 
-    // Make all current cards draggable
-    const cards = boardView.querySelectorAll('.task-card');
-    console.log(`Found ${cards.length} cards`);
-    cards.forEach(card => {
-        card.setAttribute('draggable', 'true');
-    });
-}
-
-function handleDragStart(e) {
-    // Check if the dragged element is a task card
-    const card = e.target.closest('.task-card');
-    if (!card) return;
-    
-    e.stopPropagation();
-    
-    window.dragState.isDragging = true;
-    window.dragState.draggedElement = card;
-    window.dragState.draggedTaskId = card.dataset.taskId;
-    
-    // Find the source column
-    const sourceContainer = card.closest('.cards-container');
-    window.dragState.sourceStatus = sourceContainer ? sourceContainer.dataset.status : null;
-    
-    card.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', window.dragState.draggedTaskId);
-    
-    console.log('Drag started:', {
-        taskId: window.dragState.draggedTaskId,
-        sourceStatus: window.dragState.sourceStatus
-    });
-}
-
-function handleDragEnd(e) {
-    const card = e.target.closest('.task-card');
-    if (!card) return;
-    
-    card.classList.remove('dragging');
-    
-    // Reset column backgrounds
-    document.querySelectorAll('.kanban-column').forEach(col => {
-        col.classList.remove('drag-over');
-        col.style.backgroundColor = '';
-    });
-    
-    console.log('Drag ended');
-    
-    // Reset state after a short delay
-    setTimeout(() => {
+    function handleDragEnd(e) {
+        const card = e.target.closest('.group-card');
+        if (card) {
+            card.classList.remove('dragging');
+        }
+        
+        document.querySelectorAll('.kanban-column').forEach(col => {
+            col.style.backgroundColor = '';
+        });
+        
         window.dragState.isDragging = false;
         window.dragState.draggedElement = null;
-        window.dragState.draggedTaskId = null;
-        window.dragState.sourceStatus = null;
-    }, 100);
-}
-
-function handleDragOver(e) {
-    if (!window.dragState.isDragging) return;
-    
-    e.preventDefault();
-    e.stopPropagation();
-    e.dataTransfer.dropEffect = 'move';
-    
-    const column = e.currentTarget;
-    column.style.backgroundColor = 'rgba(88, 166, 255, 0.1)';
-}
-
-function handleDragLeave(e) {
-    // Only clear if we're actually leaving the column
-    if (e.currentTarget.contains(e.relatedTarget)) return;
-    e.currentTarget.style.backgroundColor = '';
-}
-
-function handleDrop(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const column = e.currentTarget;
-    column.style.backgroundColor = '';
-    
-    if (!window.dragState.draggedTaskId) {
-        console.log('No task being dragged');
-        return;
+        window.dragState.draggedGroupId = null;
     }
-    
-    const cardsContainer = column.querySelector('.cards-container');
-    if (!cardsContainer) {
-        console.log('No cards container found');
-        return;
-    }
-    
-    const newStatus = cardsContainer.dataset.status;
-    const taskId = window.dragState.draggedTaskId;
-    
-    console.log(`Dropping task ${taskId} into ${newStatus}`);
-    
-    // Calculate new position
-    const afterElement = getDragAfterElement(cardsContainer, e.clientY);
-    const allCards = Array.from(cardsContainer.querySelectorAll('.task-card:not(.dragging)'));
-    let newOrder = 0;
-    
-    if (afterElement) {
-        const afterIndex = allCards.indexOf(afterElement);
-        newOrder = afterIndex;
-    } else {
-        newOrder = allCards.length;
-    }
-    
-    console.log(`Moving to position ${newOrder}`);
-    
-    // Send update to server
-    updateTaskStatus(taskId, newStatus, newOrder);
-}
 
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
-    
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
+    function handleDragOver(e) {
+        if (!window.dragState.isDragging) return;
+        e.preventDefault(); // Allow drop
         
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
+        const column = e.target.closest('.kanban-column');
+        if (column) {
+            column.style.backgroundColor = 'rgba(88, 166, 255, 0.05)';
         }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-async function updateTaskStatus(taskId, newStatus, newOrder) {
-    try {
-        const url = `/todobido/${taskId}`;
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        
-        if (!csrfToken) {
-            console.error('CSRF token not found');
-            return;
-        }
-        
-        console.log('Sending update:', { taskId, newStatus, newOrder });
-        
-        const response = await fetch(url, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                status: newStatus,
-                new_order: newOrder
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            console.log('Task updated successfully');
-            // Refresh the board to show updated state
-            window.location.reload();
-        } else {
-            console.error('Update failed:', data.message);
-            window.location.reload();
-        }
-    } catch (error) {
-        console.error('Error updating task:', error);
-        alert('Failed to update task. Please try again.');
-        window.location.reload();
     }
-}
 
-// Handle card clicks separately from drag events
-window.handleCardClick = function(event, taskId, status) {
-    // Only trigger if we're not dragging
-    if (!window.dragState.isDragging) {
-        Livewire.dispatch('open-task-modal', { 
-            taskId: taskId,
-            status: status 
-        });
+    function handleDragEnter(e) {
+        if (!window.dragState.isDragging) return;
+        const column = e.target.closest('.kanban-column');
+        if (column) {
+            column.style.backgroundColor = 'rgba(88, 166, 255, 0.1)';
+        }
     }
-}
-</script>
+
+    function handleDragLeave(e) {
+        const column = e.target.closest('.kanban-column');
+        // Only clear if we are leaving the column (and not entering a child)
+        if (column && !column.contains(e.relatedTarget)) {
+            column.style.backgroundColor = '';
+        }
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        
+        const column = e.target.closest('.kanban-column');
+        if (!column) return;
+        
+        column.style.backgroundColor = '';
+        
+        if (!window.dragState.draggedGroupId) return;
+        
+        const cardsContainer = column.querySelector('.cards-container');
+        const newStatus = cardsContainer.dataset.status;
+        const groupId = window.dragState.draggedGroupId;
+        
+        // Calculate position
+        const afterElement = getDragAfterElement(cardsContainer, e.clientY);
+        const allCards = Array.from(cardsContainer.querySelectorAll('.group-card:not(.dragging)'));
+        let newOrder = afterElement ? allCards.indexOf(afterElement) : allCards.length;
+        
+        // Optimistic UI update (optional, but let's trust Livewire for now)
+        @this.call('updateGroupStatus', groupId, newStatus, newOrder);
+    }
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.group-card:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+    </script>
+</div>
