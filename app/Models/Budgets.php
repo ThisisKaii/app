@@ -61,14 +61,21 @@ class Budgets extends Model
     // Helper methods
     public function getTotalAllocated()
     {
-        return $this->budgetCategories()->sum('amount_estimated');
+        // Allocated includes: Pending, Approved, Completed
+        return $this->budgetCategories()
+            ->whereIn('status', ['pending', 'approved', 'completed'])
+            ->sum('amount_estimated');
     }
 
     public function getTotalSpent()
     {
-        return $this->budgetCategories->sum(function ($category) {
-            return $category->getTotalSpent();
-        });
+        // Spent includes: Completed ONLY
+        return $this->budgetCategories()
+            ->where('status', 'completed')
+            ->get()
+            ->sum(function ($category) {
+                return $category->getTotalSpent();
+            });
     }
 
     public function getRemainingBudget()

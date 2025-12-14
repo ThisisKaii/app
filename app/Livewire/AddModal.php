@@ -50,6 +50,15 @@ class AddModal extends Component
         return $board ? $board->members()->orderBy('name')->get() : collect([]);
     }
 
+    public function getCanAssignProperty()
+    {
+        $board = \App\Models\Board::find($this->boardId);
+        if (!$board) return false;
+        
+        $member = $board->members()->where('user_id', auth()->id())->first();
+        return $member && in_array($member->pivot->role, ['owner', 'admin']);
+    }
+
     public function openGroupModal($status = null, $groupId = null)
     {
         $this->resetForm();

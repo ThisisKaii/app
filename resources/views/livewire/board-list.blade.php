@@ -1,4 +1,4 @@
-<div class="board-list-container">
+<div class="board-list-container" wire:poll.5s>
     <!-- Filter Bar -->
     <div class="filter-bar">
         <div class="filter-left">
@@ -61,7 +61,7 @@
         <div class="boards-grid">
             @foreach($boards as $board)
                 @php
-                    $memberCount = $board->members()->count();
+                    $memberCount = $board->members()->wherePivotIn('role', ['admin', 'member'])->count();
                     $userMember = $board->members()->where('user_id', auth()->id())->first();
                     $userRole = $userMember ? $userMember->pivot->role : 'member';
 

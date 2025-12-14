@@ -74,7 +74,17 @@ class Task extends Model
 
     protected function customUpdatedDescription($changes)
     {
-        // Status change only
+        // Status change to Completed
+        if (isset($changes['status']) && $changes['status']['new'] === 'published') {
+            return "Completed task '{$this->title}'";
+        }
+        
+        // Status change from Completed (Reopened)
+        if (isset($changes['status']) && $changes['status']['old'] === 'published') {
+            return "Reopened task '{$this->title}'";
+        }
+
+        // Status change only (e.g. To Do -> In Progress)
         if (isset($changes['status']) && count($changes) === 1) {
             $old = ucfirst(str_replace('_', ' ', $changes['status']['old']));
             $new = ucfirst(str_replace('_', ' ', $changes['status']['new']));

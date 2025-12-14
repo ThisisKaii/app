@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\Board;
 use App\Models\Task;
+use Illuminate\Support\Facades\Auth;
 
 class Boards extends Component
 {
@@ -12,7 +13,14 @@ class Boards extends Component
     public $board;
     public $boardId;
 
-    protected $listeners = ['refreshBoard' => 'loadGroups'];
+    protected $listeners = ['refreshBoard' => 'loadGroups', 'takeTask' => 'takeTask'];
+
+    // Check if current user can edit (is owner/admin)
+    public function getCanEditProperty()
+    {
+        $member = $this->board->members()->where('user_id', Auth::id())->first();
+        return $member && in_array($member->pivot->role, ['owner', 'admin']);
+    }
 
     public function mount($boardId)
     {
@@ -58,6 +66,15 @@ class Boards extends Component
     {
         $group = \App\Models\TaskGroup::find($groupId);
         if ($group) {
+            // Enforce permissions: Only Owners/Admins or Assigned Members can move cards
+            try {
+                \Illuminate\Support\Facades\Gate::authorize('update', $group);
+            } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+                // If unauthorized, just return (Livewire will handle error, or we can dispatch notify)
+                $this->dispatch('error', 'You do not have permission to move this card.');
+                return;
+            }
+
             $group->status = $newStatus;
             $group->order = $newOrder;
             $group->save();
@@ -82,8 +99,28 @@ class Boards extends Component
         }
     }
 
+    // Allow members to take (assign to themselves) a task
+    public function takeTask($taskId)
+    {
+        $task = Task::find($taskId);
+        if (!$task) return;
+        
+        $userId = Auth::id();
+        
+        // Check if user is already assigned
+        if ($task->users()->where('user_id', $userId)->exists()) {
+            // Already assigned - remove assignment (toggle off)
+            $task->users()->detach($userId);
+        } else {
+            // Not assigned - add assignment
+            $task->users()->attach($userId);
+        }
+        
+        $this->loadGroups();
+    }
+
     public function render()
     {
-        return view('livewire.board', ['groups' => $this->groups]);
+        return view('livewire.board', ['groups' => $this->groups, 'canEdit' => $this->canEdit]);
     }
 }

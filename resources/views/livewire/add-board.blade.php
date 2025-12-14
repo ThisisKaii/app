@@ -49,8 +49,7 @@
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
 
                                 <!-- Normal Board Option -->
-                                <label style="cursor: pointer;">
-                                    <input type="radio" wire:model.live="list_type" value="Normal" style="display: none;">
+                                <div wire:click="$set('list_type', 'Normal')" style="cursor: pointer;">
                                     <div
                                         style="padding: 1rem; background: #161b22; border: 2px solid {{ $list_type === 'Normal' ? '#238636' : '#30363d' }}; border-radius: 8px; transition: all 0.2s;">
                                         <div
@@ -86,11 +85,10 @@
                                             @endif
                                         </div>
                                     </div>
-                                </label>
+                                </div>
 
                                 <!-- Business Board Option -->
-                                <label style="cursor: pointer;">
-                                    <input type="radio" wire:model.live="list_type" value="Business" style="display: none;">
+                                <div wire:click="$set('list_type', 'Business')" style="cursor: pointer;">
                                     <div
                                         style="padding: 1rem; background: #161b22; border: 2px solid {{ $list_type === 'Business' ? '#238636' : '#30363d' }}; border-radius: 8px; transition: all 0.2s;">
                                         <div
@@ -126,7 +124,7 @@
                                             @endif
                                         </div>
                                     </div>
-                                </label>
+                                </div>
 
                             </div>
 

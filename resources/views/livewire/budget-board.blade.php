@@ -1,10 +1,15 @@
 <div wire:poll.10s.keep-alive>
     <!-- Main Content -->
     <div class="container">
-        <!-- Budget Summary Header -->
+        <!-- Budget Summary Section (Split Bars Design) -->
         <div class="budget-summary-card">
             <div class="budget-summary-header">
-                <h2 class="budget-summary-title">Budget Overview</h2>
+                <div class="budget-summary-title">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="text-blue-400">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Budget Overview
+                </div>
                 <button class="btn-primary" wire:click="openBudgetModal" type="button">
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -15,71 +20,75 @@
             </div>
 
             <div class="budget-stats-grid">
+                <!-- Total Budget -->
                 <div class="budget-stat-card">
                     <div class="stat-label">Total Budget</div>
                     <div class="stat-value total-budget">${{ number_format($budget->total_budget, 2) }}</div>
                 </div>
 
-                <div class="budget-stat-card">
-                    <div class="stat-label">Allocated</div>
-                    <div class="stat-value allocated">${{ number_format($totalAllocated, 2) }}</div>
-                    <div class="stat-percentage">
-                        @if($budget->total_budget > 0)
-                            {{ number_format(($totalAllocated / $budget->total_budget) * 100, 1) }}% of total
-                        @else
-                            0% of total
-                        @endif
-                    </div>
-                </div>
-
-                <div class="budget-stat-card">
-                    <div class="stat-label">Spent</div>
-                    <div class="stat-value spent">${{ number_format($totalSpent, 2) }}</div>
-                    <div class="stat-percentage">
-                        @if($budget->total_budget > 0)
-                            {{ number_format(($totalSpent / $budget->total_budget) * 100, 1) }}% of total
-                        @else
-                            0% of total
-                        @endif
-                    </div>
-                </div>
-
+                <!-- Remaining -->
                 <div class="budget-stat-card">
                     <div class="stat-label">Remaining</div>
                     <div class="stat-value {{ $remaining < 0 ? 'over-budget' : 'remaining' }}">
-                        ${{ number_format(abs($remaining), 2) }}
+                        {{ $remaining < 0 ? '-' : '' }}${{ number_format(abs($remaining), 2) }}
                     </div>
                     @if($remaining < 0)
-                        <div class="stat-warning">⚠️ Over Budget!</div>
+                        <div class="stat-warning">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            Over Budget
+                        </div>
                     @endif
                 </div>
             </div>
 
-            <!-- Modern Progress Bar -->
+            <!-- Merged Progress Bar (Spent vs Allocated) -->
             @if($budget->total_budget > 0)
-                <div class="budget-progress-container">
-                    <div class="budget-progress-bar">
-                        <div class="progress-fill allocated-fill"
-                            style="width: {{ min(100, ($totalAllocated / $budget->total_budget) * 100) }}%">
+                @php
+                    $progressBarBase = max($budget->total_budget, $totalAllocated);
+                @endphp
+                <div class="merged-progress-container">
+                    <div class="merged-stats-row">
+                        <div class="merged-stat-label">
+                            Budget Usage
                         </div>
-                        <div class="progress-fill spent-fill"
-                            style="width: {{ min(100, ($totalSpent / $budget->total_budget) * 100) }}%">
+                        <div class="merged-stat-values">
+                            <span class="val-spent">${{ number_format($totalSpent, 2) }}</span>
+                            <span class="val-separator">/</span>
+                            <span class="val-allocated">${{ number_format($totalAllocated, 2) }}</span>
                         </div>
                     </div>
-                    <div class="progress-legend">
-                        <span class="legend-item">
-                            <span class="legend-color allocated-color"></span> Allocated
-                        </span>
-                        <span class="legend-item">
-                            <span class="legend-color spent-color"></span> Spent
-                        </span>
+                    
+                    <div class="merged-progress-track">
+                        <!-- Spent Segment (Orange) -->
+                        <div class="progress-segment segment-spent"
+                             style="width: {{ min(100, ($totalSpent / $progressBarBase) * 100) }}%">
+                        </div>
+                        
+                        <!-- Allocated Remaining Segment (Blue) - visible only if allocated > spent -->
+                        @if($totalAllocated > $totalSpent)
+                            <div class="progress-segment segment-allocated"
+                                 style="width: {{ min(100, (($totalAllocated - $totalSpent) / $progressBarBase) * 100) }}%">
+                            </div>
+                        @endif
+                    </div>
+                    
+                    <div class="merged-stats-row" style="font-size: 0.75rem; color: #8b949e;">
+                        <div class="flex items-center gap-2">
+                            <span class="dot-spent"></span> Spent
+                            <span class="dot-allocated ml-2"></span> Allocated
+                        </div>
+                        <div>
+                            {{ number_format(($totalAllocated / $budget->total_budget) * 100, 1) }}% Allocated
+                        </div>
                     </div>
                 </div>
             @endif
         </div>
 
         <!-- Budget Categories Board (Kanban Style) -->
-        <div id="budget-board" class="kanban-container" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.5rem; overflow-x: auto;">
+        <div id="budget-board" class="kanban-container">
             @php
                 $statusConfig = [
                     'draft' => ['label' => 'Draft', 'badge' => 'draft-badge'],
@@ -113,45 +122,37 @@
                                     <h3 class="category-title">{{ $category->title }}</h3>
                                 </div>
 
+                                <!-- Clean Stats Layout -->
                                 <div class="category-budget-info">
-                                    <div class="budget-row">
-                                        <span class="budget-label">Estimated:</span>
-                                        <span class="budget-amount estimated">${{ number_format($category->amount_estimated, 2) }}</span>
-                                    </div>
-                                    <div class="budget-row">
-                                        <span class="budget-label">Spent:</span>
-                                        <span class="budget-amount spent">${{ number_format($totalSpent, 2) }}</span>
-                                    </div>
-                                    <div class="budget-row">
-                                        <span class="budget-label">Remaining:</span>
-                                        <span class="budget-amount {{ $remaining < 0 ? 'over-budget' : 'remaining' }}">
-                                            ${{ number_format(abs($remaining), 2) }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div class="category-progress">
                                     <div class="progress-bar-small">
                                         <div class="progress-fill-small"
                                             style="width: {{ min(100, $progress) }}%; 
-                                                background-color: {{ $progress > 100 ? '#ef4444' : ($progress > 80 ? '#f59e0b' : '#22c55e') }}">
+                                                background-color: {{ $progress > 100 ? '#ef4444' : ($progress > 80 ? '#f59e0b' : '#2ea043') }}">
                                         </div>
                                     </div>
-                                    <span class="progress-text">{{ number_format($progress, 0) }}%</span>
+                                    
+                                    <div class="budget-stats-clean">
+                                        <div class="stat-group" title="Spent Amount">
+                                            <span class="budget-amount spent">${{ number_format($totalSpent, 0) }}</span>
+                                        </div>
+                                        <div class="stat-group" title="Estimated Budget">
+                                            <span class="budget-amount total">/ ${{ number_format($category->amount_estimated, 0) }}</span>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="category-footer">
                                     <span class="expense-count">
-                                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                         </svg>
-                                        {{ $category->expenses->count() }} {{ Str::plural('expense', $category->expenses->count()) }}
+                                        {{ $category->expenses->count() }}
                                     </span>
 
                                     @if($category->description)
                                         <span class="has-description" title="{{ $category->description }}">
-                                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
                                             </svg>
                                         </span>
@@ -697,16 +698,18 @@
 
             if (data.success) {
                 console.log('Budget category updated successfully');
-                // Refresh the board to show updated state
-                window.location.reload();
+                // Refresh the board via Livewire instead of page reload
+                Livewire.dispatch('refresh-budget');
+                // Also trigger category refresh just in case
+                Livewire.dispatch('refresh-categories');
             } else {
                 console.error('Update failed:', data.message);
-                window.location.reload();
+                Livewire.dispatch('refresh-budget');
             }
         } catch (error) {
             console.error('Error updating budget category:', error);
-            alert('Failed to update budget category. Please try again.');
-            window.location.reload();
+            // alert('Failed to update budget category. Please try again.');
+             Livewire.dispatch('refresh-budget');
         }
     }
 

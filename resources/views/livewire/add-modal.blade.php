@@ -66,7 +66,8 @@
                                     onclick="this.showPicker()">
                             </div>
 
-                            <!-- Assignees (Multi) -->
+                            <!-- Assignees (Multi) - Only for Owner/Admin -->
+                            @if($this->canAssign)
                             <div style="margin-bottom: 1rem;">
                                 <label style="display: block; color: #c9d1d9; margin-bottom: 0.5rem; font-weight: 500;">Assignees</label>
                                 <div style="max-height: 150px; overflow-y: auto; background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 0.5rem;">
@@ -83,6 +84,7 @@
                                     @endforeach
                                 </div>
                             </div>
+                            @endif
                         @endif
 
                     </div>

@@ -26,24 +26,29 @@ class Teams extends Component
         // Load the board
         $this->board = Board::findOrFail($this->boardId);
 
-        // Get only board members with their tasks for THIS board
-        $this->teamMembers = $this->board->members()
-            ->with([
-                'assignedTasks' => function ($query) {
-                    $query->where('board_id', $this->boardId)
-                        ->orderBy('created_at', 'desc');
-                }
-            ])
-            ->get()
-            ->map(function ($member) {
-                // Map assignedTasks to tasks for compatibility with the view
-                $member->tasks = $member->assignedTasks;
-                return $member;
-            });
+        // Get board members
+        $members = $this->board->members()->get();
+        
+        // For each member, get their tasks for THIS board only
+        $this->teamMembers = $members->map(function ($member) {
+            // Query tasks assigned to this user for THIS board specifically
+            $member->tasks = Task::where('board_id', $this->boardId)
+                ->where(function($query) use ($member) {
+                    // Check both old assignee_id and new task_user pivot
+                    $query->where('assignee_id', $member->id)
+                          ->orWhereHas('users', function($q) use ($member) {
+                              $q->where('user_id', $member->id);
+                          });
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
+            return $member;
+        });
 
         // Get unassigned tasks only for THIS board
         $this->unassignedTasks = Task::where('board_id', $this->boardId)
             ->whereNull('assignee_id')
+            ->whereDoesntHave('users') // Also check new relationship
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -75,6 +80,9 @@ class Teams extends Component
 
     public function render()
     {
+        // Reload data on every render (including wire:poll refreshes)
+        $this->loadTeamData();
+        
         return view('livewire.teams');
     }
 }
