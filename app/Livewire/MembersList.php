@@ -12,7 +12,7 @@ class MembersList extends Component
 {
     public $boardId;
     public $board;
-    public $members = [];
+    // public $members = []; // Removed to fix hydration issue
     public $currentUserRole;
 
     // Filters
@@ -50,9 +50,6 @@ class MembersList extends Component
 
         // Set current user role
         $this->setCurrentUserRole();
-
-        // Apply filters to load members
-        $this->applyFilters();
     }
 
     protected function setCurrentUserRole()
@@ -93,30 +90,11 @@ class MembersList extends Component
         }
     }
 
-    public function applyFilters()
-    {
-        // Always load fresh with pivot
-        $query = $this->board->members()->withPivot('role', 'created_at');
-
-        if ($this->roleFilter) {
-            $query->wherePivot('role', $this->roleFilter);
-        }
-
-        if ($this->searchFilter) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', "%{$this->searchFilter}%")
-                    ->orWhere('email', 'like', "%{$this->searchFilter}%");
-            });
-        }
-
-        $this->members = $query->get();
-    }
+    // applyFilters removed - logic moved to render
 
     public function updated($property)
     {
-        if (in_array($property, ['roleFilter', 'searchFilter'])) {
-            $this->applyFilters();
-        }
+        // Livewire automatically re-renders, so we don't need to manually call applyFilters
     }
 
     public function toggleFilters()
@@ -128,7 +106,6 @@ class MembersList extends Component
     {
         $this->roleFilter = '';
         $this->searchFilter = '';
-        $this->applyFilters();
     }
 
     public function openAddModal()
@@ -298,6 +275,23 @@ class MembersList extends Component
 
     public function render()
     {
-        return view('livewire.members-list');
+        $query = $this->board->members()->withPivot('role', 'created_at');
+
+        if ($this->roleFilter) {
+            $query->wherePivot('role', $this->roleFilter);
+        }
+
+        if ($this->searchFilter) {
+            $query->where(function ($q) {
+                $q->where('name', 'like', "%{$this->searchFilter}%")
+                    ->orWhere('email', 'like', "%{$this->searchFilter}%");
+            });
+        }
+
+        $members = $query->get();
+
+        return view('livewire.members-list', [
+            'members' => $members,
+        ]);
     }
 }

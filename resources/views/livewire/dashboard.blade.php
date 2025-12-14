@@ -258,34 +258,38 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Left Column -->
             <div class="lg:col-span-2 space-y-8">
-                <!-- Task Status Bars -->
-                <div class="bg-[#0d1117] rounded-2xl p-6 border border-[#30363d]">
-                    <h3 class="text-lg font-semibold mb-6 text-[#f0f6fc]">Task Composition</h3>
-                    <div class="space-y-6">
-                        @foreach(['to_do' => 'To Do', 'in_progress' => 'In Progress', 'in_review' => 'In Review', 'published' => 'Completed'] as $key => $label)
-                            @php 
-                                $count = $dashboardData['statusDistribution'][$key] ?? 0;
-                                $percentage = $dashboardData['totalTasks'] > 0 ? ($count / $dashboardData['totalTasks']) * 100 : 0;
-                                $color = match($key) {
-                                    'to_do' => 'bg-[#6e7681]',
-                                    'in_progress' => 'bg-[#58a6ff]',
-                                    'in_review' => 'bg-[#d29922]',
-                                    'published' => 'bg-[#3fb950]',
-                                };
-                            @endphp
-                            <div>
-                                <div class="flex justify-between mb-2 text-sm">
-                                    <span class="text-[#c9d1d9]">{{ $label }}</span>
-                                    <span class="font-mono text-[#8b949e]">{{ $count }} tasks</span>
-                                </div>
-                                <div class="w-full bg-[#21262d] h-3 rounded-full overflow-hidden">
-                                    <div class="{{ $color }} h-3 rounded-full transition-all duration-500" style="width: {{ $percentage }}%"></div>
-                                </div>
+                <!-- Recommended Focus Widget -->
+                @if($dashboardData['recommendedTask'])
+                    <div class="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-2xl p-6 border border-indigo-500/20 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-10">
+                            <svg class="w-32 h-32 text-indigo-500" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z"/>
+                            </svg>
+                        </div>
+                        <div class="relative z-10">
+                            <div class="flex items-center gap-2 mb-2 text-indigo-400 font-medium text-sm uppercase tracking-wider">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                Recommended Focus
                             </div>
-                        @endforeach
+                            <h3 class="text-2xl font-bold text-white mb-2">{{ $dashboardData['recommendedTask']->title }}</h3>
+                            <div class="flex flex-wrap gap-4 text-sm text-[#8b949e]">
+                                <div class="flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full 
+                                        {{ $dashboardData['recommendedTask']->priority === 'high' ? 'bg-rose-500' : ($dashboardData['recommendedTask']->priority === 'medium' ? 'bg-amber-500' : 'bg-blue-500') }}">
+                                    </span>
+                                    {{ ucfirst($dashboardData['recommendedTask']->priority) }} Priority
+                                </div>
+                                @if($dashboardData['recommendedTask']->due_date)
+                                    <div class="flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        Due {{ $dashboardData['recommendedTask']->due_date->format('M d') }}
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
                     </div>
-                </div>
-                
+                @endif
+
                 <!-- Recent Tasks List -->
                 <div class="bg-[#0d1117] rounded-2xl p-6 border border-[#30363d]">
                     <h3 class="text-lg font-semibold mb-6 text-[#f0f6fc]">Recent Activity</h3>
@@ -361,6 +365,8 @@
             </div>
         </div>
     @endif
+    
+
 
     <!-- All Transactions Modal -->
     @if($showAllTransactions && $isBusinessBoard)
