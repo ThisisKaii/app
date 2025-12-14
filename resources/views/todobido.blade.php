@@ -631,11 +631,8 @@
 
         // Close user modal
         closeModal.addEventListener('click', () => {
-            closeModal.style.transform = 'rotate(45deg)';
-            setTimeout(() => {
-                userModal.classList.remove('active');
-                document.body.style.overflow = '';
-            }, 200);
+            userModal.classList.remove('active');
+            document.body.style.overflow = '';
         });
 
         // Close modal when clicking outside

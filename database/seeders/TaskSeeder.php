@@ -14,93 +14,162 @@ class TaskSeeder extends Seeder
         $board = Board::first();
         $user = User::first();
 
-        // To Do tasks
-        Task::create([
+        // 1. Group: Homepage Redesign (To Do)
+        $group1 = \App\Models\TaskGroup::create([
             'board_id' => $board->id,
-            'user_id' => $user->id,
             'title' => 'Homepage Redesign',
             'status' => 'to_do',
-            'priority' => 'high',
+            'order' => 1
+        ]);
+
+        $task1 = Task::create([
+            'board_id' => $board->id,
+            'group_id' => $group1->id,
+            'user_id' => $user->id,
+            'title' => 'Design', // Legacy
             'type' => 'Design',
+            'priority' => 'high',
             'description' => 'Redesign the homepage with new branding',
             'order' => 1,
+            'status' => 'to_do'
         ]);
+        $task1->users()->attach($user->id);
 
-        Task::create([
+
+        // 2. Group: Mobile Navigation (To Do)
+        $group2 = \App\Models\TaskGroup::create([
             'board_id' => $board->id,
-            'user_id' => $user->id,
             'title' => 'Mobile Navigation',
             'status' => 'to_do',
-            'priority' => 'medium',
-            'type' => 'Development',
-            'description' => 'Fix mobile menu responsiveness',
-            'order' => 2,
+            'order' => 2
         ]);
 
-        // In Review tasks
-        Task::create([
+        $task2 = Task::create([
             'board_id' => $board->id,
+            'group_id' => $group2->id,
             'user_id' => $user->id,
+            'title' => 'Development',
+            'type' => 'Development',
+            'priority' => 'medium',
+            'description' => 'Fix mobile menu responsiveness',
+            'order' => 1,
+            'status' => 'to_do'
+        ]);
+        $task2->users()->attach($user->id);
+
+
+        // 3. Group: Contact Form (In Review)
+        $group3 = \App\Models\TaskGroup::create([
+            'board_id' => $board->id,
             'title' => 'Contact Form',
             'status' => 'in_review',
-            'priority' => 'medium',
-            'type' => 'Development',
-            'due_date' => now()->addDays(3),
-            'assignee_id' => $user->id,
-            'description' => 'Add validation to contact form',
-            'order' => 1,
+            'order' => 1
         ]);
 
-        // In Progress tasks
-        Task::create([
+        $task3 = Task::create([
             'board_id' => $board->id,
+            'group_id' => $group3->id,
             'user_id' => $user->id,
+            'title' => 'Development',
+            'type' => 'Development',
+            'priority' => 'medium',
+            'due_date' => now()->addDays(3),
+            'description' => 'Add validation to contact form',
+            'order' => 1,
+            'status' => 'in_review'
+        ]);
+        $task3->users()->attach($user->id);
+
+
+        // 4. Group: Blog Section (In Progress)
+        $group4 = \App\Models\TaskGroup::create([
+            'board_id' => $board->id,
             'title' => 'Blog Section',
             'status' => 'in_progress',
-            'priority' => 'high',
+            'order' => 1
+        ]);
+
+        $task4 = Task::create([
+            'board_id' => $board->id,
+            'group_id' => $group4->id,
+            'user_id' => $user->id,
+            'title' => 'Development',
             'type' => 'Development',
-            'assignee_id' => $user->id,
+            'priority' => 'high',
             'due_date' => now()->addDays(7),
             'description' => 'Build blog listing and single post pages',
             'order' => 1,
+            'status' => 'in_progress'
         ]);
+        $task4->users()->attach($user->id);
 
-        Task::create([
+
+        // 5. Group: Newsletter Integration (In Progress)
+        $group5 = \App\Models\TaskGroup::create([
             'board_id' => $board->id,
-            'user_id' => $user->id,
             'title' => 'Newsletter Integration',
             'status' => 'in_progress',
-            'priority' => 'low',
-            'type' => 'Development',
-            'due_date' => now()->addDays(10),
-            'description' => 'Connect Mailchimp API',
-            'order' => 2,
+            'order' => 2
         ]);
 
-        // Published tasks
-        Task::create([
+        $task5 = Task::create([
             'board_id' => $board->id,
+            'group_id' => $group5->id,
             'user_id' => $user->id,
+            'title' => 'Development',
+            'type' => 'Development',
+            'priority' => 'low',
+            'due_date' => now()->addDays(10),
+            'description' => 'Connect Mailchimp API',
+            'order' => 1,
+            'status' => 'in_progress'
+        ]);
+        $task5->users()->attach($user->id);
+
+
+        // 6. Group: Landing Page (Published)
+        $group6 = \App\Models\TaskGroup::create([
+            'board_id' => $board->id,
             'title' => 'Landing Page',
             'status' => 'published',
-            'priority' => 'high',
+            'order' => 1
+        ]);
+
+        $task6 = Task::create([
+            'board_id' => $board->id,
+            'group_id' => $group6->id,
+            'user_id' => $user->id,
+            'title' => 'Design',
             'type' => 'Design',
-            'assignee_id' => $user->id,
+            'priority' => 'high',
             'completed_at' => now()->subDays(2),
             'description' => 'Create landing page for product launch',
             'order' => 1,
+            'status' => 'published'
         ]);
+        $task6->users()->attach($user->id);
 
-        Task::create([
+
+        // 7. Group: Logo Design (Published)
+        $group7 = \App\Models\TaskGroup::create([
             'board_id' => $board->id,
-            'user_id' => $user->id,
             'title' => 'Logo Design',
             'status' => 'published',
-            'priority' => 'medium',
+            'order' => 2
+        ]);
+
+        $task7 = Task::create([
+            'board_id' => $board->id,
+            'group_id' => $group7->id,
+            'user_id' => $user->id,
+            'title' => 'Design',
             'type' => 'Design',
+            'priority' => 'medium',
             'completed_at' => now()->subDays(5),
             'description' => 'Design new company logo',
-            'order' => 2,
+            'order' => 1,
+            'status' => 'published'
         ]);
+        $task7->users()->attach($user->id);
     }
 }

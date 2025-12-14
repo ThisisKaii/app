@@ -162,6 +162,29 @@ class Dashboard extends Component
             ];
         }
 
+        // Recommended Task
+        $recommendedTask = $tasks->filter(function ($task) {
+            return $task->status !== 'published';
+        })->sort(function ($a, $b) {
+            // Sort by Priority (High > Medium > Low > None)
+            $priorityOrder = ['high' => 3, 'medium' => 2, 'low' => 1, null => 0];
+            $priorityA = $priorityOrder[$a->priority] ?? 0;
+            $priorityB = $priorityOrder[$b->priority] ?? 0;
+
+            if ($priorityA !== $priorityB) {
+                return $priorityB <=> $priorityA; // Descending priority
+            }
+
+            // Then by Due Date (Sooner is better)
+            if ($a->due_date && $b->due_date) {
+                return $a->due_date <=> $b->due_date;
+            }
+            if ($a->due_date) return -1;
+            if ($b->due_date) return 1;
+
+            return 0;
+        })->first();
+
         // Recent tasks (last 10 updated)
         $recentTasks = $tasks->sortByDesc('updated_at')->take(10)->values();
 
@@ -171,14 +194,15 @@ class Dashboard extends Component
             'inProgressTasks' => $inProgressTasks,
             'overdueTasks' => $overdueTasks,
             'completionRate' => $completionRate,
-            'statusDistribution' => $statusDistribution,
-            'priorityBreakdown' => $priorityBreakdown,
             'dueThisWeek' => $dueThisWeek,
             'dueNextWeek' => $dueNextWeek,
-            'assigneeStats' => $assigneeStats,
             'unassignedTasks' => $unassignedTasks,
             'weeklyTrend' => $weeklyTrend,
             'recentTasks' => $recentTasks,
+            'recommendedTask' => $recommendedTask,
+            'statusDistribution' => $statusDistribution,
+            'priorityBreakdown' => $priorityBreakdown,
+            'assigneeStats' => $assigneeStats,
         ];
     }
 

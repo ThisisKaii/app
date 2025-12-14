@@ -10,7 +10,7 @@
                 Filter
             </button>
 
-            <button class="add-task-btn" wire:click="openTaskModal()">
+            <button class="add-task-btn" wire:click="$dispatch('open-group-modal')">
                 <svg class="stat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
@@ -22,7 +22,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
-                {{ count($tasks) }} {{ Str::plural('task', count($tasks)) }}
+                {{ count($groups) }} {{ Str::plural('group', count($groups)) }}
             </span>
         </div>
     </div>
@@ -80,106 +80,168 @@
         </div>
     @endif
 
-    @if(count($tasks) > 0)
+    @if(count($groups) > 0)
         <div class="table-wrapper">
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Title</th>
-                        <th>Status</th>
-                        <th>Type</th>
-                        <th>Priority</th>
-                        <th>Assignee</th>
-                        <th>Due Date</th>
-                        <th>Tags</th>
-                        <th>Link</th>
+                        <th style="width: 40%">Title</th>
+                        <th style="width: 15%">Status</th>
+                        <th style="width: 20%">Progress</th>
+                        <th style="width: 15%">Team</th>
+                        <th style="width: 10%">Due</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($tasks as $task)
-                        <tr wire:key="task-{{ $task->id }}" style="cursor: pointer;" wire:click="openTaskModal({{ $task->id }})"
-                            class="table-row">
-                            <td>
-                                <div class="task-title">{{ $task->title }}</div>
+                    @foreach($groups as $group)
+                        {{-- Master Row --}}
+                        <tr wire:key="group-{{ $group->id }}" 
+                            class="table-row master-row" 
+                            style="cursor: pointer; border-bottom: none;"
+                            wire:click="toggleGroup({{ $group->id }})">
+                            <td style="width: 40%">
+                                <div class="task-title" style="font-weight: 600; color: #f0f6fc; display: flex; align-items: center; gap: 8px;">
+                                    <svg style="width: 16px; height: 16px; transition: transform 0.2s; transform: {{ in_array($group->id, $expandedGroups) ? 'rotate(90deg)' : 'rotate(0deg)' }}" 
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                    {{ $group->title }}
+                                </div>
                             </td>
-                            <td>
-                                <span class="status-badge status-{{ Str::slug($task->status) }}">
-                                    {{ str_replace('_', ' ', ucfirst($task->status)) }}
+                            <td style="width: 15%">
+                                <span class="status-badge status-{{ Str::slug($group->status ?? 'to_do') }}">
+                                    {{ str_replace('_', ' ', ucfirst($group->status ?? 'to do')) }}
                                 </span>
                             </td>
-                            <td>
-                                <span class="type-text">{{ $task->type ?? 'N/A' }}</span>
-                            </td>
-                            <td>
-                                @if($task->priority)
-                                    <span class="priority-badge priority-{{ strtolower($task->priority) }}">
-                                        {{ ucfirst($task->priority) }}
+                            <td style="width: 20%">
+                                {{-- Progress Bar --}}
+                                @php
+                                    $total = $group->tasks_count;
+                                    $completed = $group->completed_tasks_count;
+                                    $percent = $total > 0 ? ($completed / $total) * 100 : 0;
+                                @endphp
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="flex: 1; height: 6px; background: #30363d; border-radius: 3px; overflow: hidden;">
+                                        <div style="width: {{ $percent }}%; height: 100%; background: #238636; transition: width 0.3s ease;"></div>
+                                    </div>
+                                    <span style="font-size: 0.75rem; color: #8b949e; min-width: 30px;">
+                                        {{ $completed }}/{{ $total }}
                                     </span>
-                                @else
-                                    <span class="text-muted">N/A</span>
-                                @endif
+                                </div>
                             </td>
-                            <td>
-                                @if(isset($task->assignee) && $task->assignee)
-                                    <div class="assignee-info">
-                                        <span class="assignee-name">{{ $task->assignee->name }}</span>
-                                    </div>
-                                @else
-                                    <span class="text-muted">Unassigned</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if($task->due_date)
+                            <td style="width: 15%">
+                                <div class="assignee-info" style="display:flex; gap:4px; flex-wrap:wrap;">
                                     @php
-                                        $dueDate = \Carbon\Carbon::parse($task->due_date);
-                                        $isOverdue = $dueDate->isPast();
-                                        $daysUntilDue = now()->diffInDays($dueDate, false);
-                                        $isDueSoon = !$isOverdue && $daysUntilDue >= 0 && $daysUntilDue <= 3;
-                                        
-                                        if ($isOverdue) {
-                                            $bgColor = 'rgba(239, 68, 68, 0.15)';
-                                            $textColor = '#ef4444';
-                                        } elseif ($isDueSoon) {
-                                            $bgColor = 'rgba(245, 158, 11, 0.15)';
-                                            $textColor = '#f59e0b';
-                                        } else {
-                                            $bgColor = 'rgba(88, 166, 255, 0.15)';
-                                            $textColor = '#58a6ff';
-                                        }
+                                        $users = $group->tasks->pluck('users')->flatten()->unique('id');
                                     @endphp
-                                    <span style="background: {{ $bgColor }}; color: {{ $textColor }}; padding: 4px 10px; border-radius: 4px; font-size: 0.875rem; display: inline-block;">{{ $dueDate->format('M d, Y') }}</span>
-                                @else
-                                    <span class="text-muted">No date</span>
-                                @endif
+                                    @if($users->count() > 0)
+                                        <div style="display: flex; margin-left: 8px;">
+                                            @foreach($users->take(4) as $index => $user)
+                                                <div title="{{ $user->name }}" 
+                                                     style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 2px solid #0d1117; margin-left: -8px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: white; font-weight: 600;">
+                                                    {{ substr($user->name, 0, 1) }}
+                                                </div>
+                                            @endforeach
+                                            @if($users->count() > 4)
+                                                <div style="width: 24px; height: 24px; border-radius: 50%; background: #30363d; border: 2px solid #0d1117; margin-left: -8px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: #c9d1d9;">
+                                                    +{{ $users->count() - 4 }}
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <span class="text-muted" style="font-size: 0.75rem;">Unassigned</span>
+                                    @endif
+                                </div>
                             </td>
-                            <td>
-                                @if(isset($task->tags) && count($task->tags) > 0)
-                                    <div class="tags-container">
-                                        @foreach($task->tags as $tag)
-                                            <span class="tag-badge"
-                                                style="background: {{ $tag->color }}20; color: {{ $tag->color }}; border: 1px solid {{ $tag->color }};">
-                                                {{ $tag->name }}
-                                            </span>
-                                        @endforeach
-                                    </div>
+                            <td style="width: 10%">
+                                @php
+                                    $earliestDue = $group->tasks->pluck('due_date')->filter()->sort()->first();
+                                @endphp
+                                @if($earliestDue)
+                                    <span style="color: #8b949e; font-size: 0.875rem;">{{ \Carbon\Carbon::parse($earliestDue)->format('M d') }}</span>
                                 @else
-                                    <span class="text-muted">No tags</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if($task->url)
-                                    <a href="{{ $task->url }}" target="_blank" class="url-link" onclick="event.stopPropagation();">
-                                        <svg class="link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                        </svg>
-                                        View
-                                    </a>
-                                @else
-                                    <span class="text-muted">No link</span>
+                                    <span class="text-muted" style="font-size: 0.875rem;">-</span>
                                 @endif
                             </td>
                         </tr>
+
+                        {{-- Detail Row (Expanded) --}}
+                        @if(in_array($group->id, $expandedGroups))
+                            <tr class="table-row detail-row" style="background: rgba(22, 27, 34, 0.5);">
+                                <td colspan="6" style="padding: 0;">
+                                    <div style="padding: 1rem 1rem 1rem 3rem; border-top: 1px dashed #30363d;">
+                                        
+                                        @if($group->tasks->count() > 0)
+                                            <div style="display: grid; grid-template-columns: 1fr; gap: 0.5rem;">
+                                                @foreach($group->tasks as $task)
+                                                    <div style="display: grid; grid-template-columns: 3fr 1fr 1fr 1fr; align-items: center; gap: 1rem; padding: 0.5rem; border-radius: 6px; background: rgba(255,255,255,0.02); transition: background 0.2s;"
+                                                         onmouseover="this.style.background='rgba(255,255,255,0.05)'"
+                                                         onmouseout="this.style.background='rgba(255,255,255,0.02)'">
+                                                        
+                                                        {{-- Task Title / Checkbox --}}
+                                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                                            <input type="checkbox" 
+                                                                   class="modern-checkbox"
+                                                                   wire:click="toggleTaskCompletion({{ $task->id }})"
+                                                                   {{ $task->completed_at ? 'checked' : '' }}>
+                                                            <span wire:click="$dispatch('open-task-modal', { taskId: {{ $task->id }} })"
+                                                                  style="cursor: pointer; color: #c9d1d9; font-size: 0.9rem; {{ $task->completed_at ? 'text-decoration: line-through; opacity: 0.5;' : '' }}">
+                                                                {{ $task->type ?: 'General Task' }}
+                                                            </span>
+                                                        </div>
+
+                                                        {{-- Assignee --}}
+                                                        <div>
+                                                            @if($task->users->count() > 0)
+                                                                <div style="display: flex; align-items: center; gap: 6px;">
+                                                                    <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 10px; color: white;">
+                                                                        {{ substr($task->users->first()->name, 0, 1) }}
+                                                                    </div>
+                                                                    <span style="font-size: 0.8rem; color: #8b949e;">{{ $task->users->first()->name }}</span>
+                                                                    @if($task->users->count() > 1)
+                                                                        <span style="font-size: 0.8rem; color: #8b949e;">+{{ $task->users->count() - 1 }}</span>
+                                                                    @endif
+                                                                </div>
+                                                            @else
+                                                                <span style="font-size: 0.8rem; color: #484f58;">Unassigned</span>
+                                                            @endif
+                                                        </div>
+
+                                                        {{-- Priority --}}
+                                                        <div>
+                                                            @if($task->priority)
+                                                                <span class="priority-badge priority-{{ strtolower($task->priority) }}" style="font-size: 0.7rem;">
+                                                                    {{ ucfirst($task->priority) }}
+                                                                </span>
+                                                            @else
+                                                                <span style="font-size: 0.8rem; color: #484f58;">-</span>
+                                                            @endif
+                                                        </div>
+
+                                                        {{-- Due Date --}}
+                                                        <div>
+                                                            @if($task->due_date)
+                                                                <span style="font-size: 0.8rem; color: {{ $task->due_date->isPast() ? '#ef4444' : '#8b949e' }};">
+                                                                    {{ $task->due_date->format('M d') }}
+                                                                </span>
+                                                            @else
+                                                                <span style="font-size: 0.8rem; color: #484f58;">-</span>
+                                                            @endif
+                                                        </div>
+
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <div style="text-align: center; padding: 1rem; color: #484f58; font-size: 0.9rem;">
+                                                No sub-tasks yet. <span wire:click="$dispatch('open-group-modal', { groupId: {{ $group->id }} })" style="color: #58a6ff; cursor: pointer; text-decoration: underline;">Add one</span>
+                                            </div>
+                                        @endif
+
+                                    </div>
+                                </td>
+                            </tr>
+                        @endif
                     @endforeach
                 </tbody>
             </table>
@@ -190,174 +252,12 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
             </svg>
-            <h3 class="empty-title">No tasks found</h3>
+            <h3 class="empty-title">No groups found</h3>
             <p class="empty-text">
-                @if($statusFilter || $priorityFilter || $assigneeFilter || $searchFilter)
-                    Try adjusting your filters or create a new task.
-                @else
-                    Create your first task to get started.
-                @endif
+                Create a new group to get started.
             </p>
         </div>
     @endif
 
-    <!-- Task Modal -->
-    @if($showModal)
-        <div class="modal-overlay" wire:click.self="closeModal" style="background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;">
-            <div class="modal-content" wire:click.stop style="background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; max-width: 800px; width: 90%;">
-                <!-- Header -->
-                <div class="modal-header" style="border-bottom: 1px solid #21262d; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                    <h2 style="color: #f0f6fc; margin: 0; font-size: 1.25rem;">{{ $isEditing ? 'Edit Task' : 'New Task' }}</h2>
-                    <button type="button" wire:click="closeModal" class="modal-close" style="background: none; border: none; color: #8b949e; font-size: 1.5rem; cursor: pointer;">&times;</button>
-                </div>
-
-                <!-- Form -->
-                <form wire:submit.prevent="saveTask">
-                    <div class="modal-body" style="padding: 1.5rem;">
-                        <!-- Row 1: Title (full width) -->
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Title <span class="required" style="color: #ef4444;">*</span></label>
-                            <input type="text" wire:model="title" required style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
-                            @error('title')
-                                <span class="error-message" style="color: #ef4444; font-size: 0.875rem;">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <!-- Row 3: Type, Priority, Status (3 columns) -->
-                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                            <div class="form-group">
-                                <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Type</label>
-                                <input type="text" wire:model="type" placeholder="e.g., Bug, Feature" style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
-                            </div>
-
-                            <div class="form-group">
-                                <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Priority</label>
-                                <select wire:model="priority" style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
-                                    <option value="">None</option>
-                                    <option value="low">Low</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="high">High</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Status</label>
-                                <select wire:model="status" style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
-                                    <option value="to_do">To Do</option>
-                                    <option value="in_progress">In Progress</option>
-                                    <option value="in_review">In Review</option>
-                                    <option value="published">Published</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Row 4: Due Date, Assignee, URL (3 columns) -->
-                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                            <div class="form-group">
-                                <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Due Date</label>
-                                <input type="date" wire:model="due_date" onclick="this.showPicker()" style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
-                            </div>
-
-                            <div class="form-group">
-                                <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Assignee</label>
-                                <select wire:model="assignee_id" style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
-                                    <option value="">Unassigned</option>
-                                    @foreach($users as $user)
-                                        <option value="{{ $user->id }}">{{ $user->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">URL / Link</label>
-                                <input type="url" wire:model="url" placeholder="https://example.com" style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
-                            </div>
-                        </div>
-
-                        <!-- Row 2: Description (full width) -->
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Description</label>
-                            <textarea wire:model="description" rows="2" placeholder="Add a description..." style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; min-height: 80px;"></textarea>
-                        </div>
-
-                        <!-- Row 5: Tags (full width with live color preview) -->
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label style="display: block; margin-bottom: 0.5rem; color: #c9d1d9; font-weight: 500;">Tags</label>
-                            <input type="text" wire:model.live="tagsInput"
-                                placeholder="Enter tags separated by commas (e.g., urgent, backend, api)" style="width: 100%; padding: 0.5rem; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;">
-
-                            @if($tagsInput)
-                                <div class="tags-preview" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
-                                    @foreach(array_filter(array_map('trim', explode(',', $tagsInput))) as $tagName)
-                                        @php
-                                            $existingTag = \App\Models\Tag::where('name', $tagName)->first();
-                                            $color = $existingTag ? $existingTag->color : $availableColors[array_rand($availableColors)];
-                                        @endphp
-                                        <span class="tag-preview"
-                                            style="background: {{ $color }}20; color: {{ $color }}; border: 1px solid {{ $color }}; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem;">
-                                            <span class="tag-dot" style="background: {{ $color }}; width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px;"></span>
-                                            {{ $tagName }}
-                                        </span>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- Footer -->
-                    <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid #21262d; display: flex; justify-content: space-between;">
-                        @if($isEditing)
-                            <button type="button" wire:click="showDeleteConfirmation()" class="btn-delete"
-                                wire:loading.attr="disabled" style="background: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;">
-                                Delete Task
-                            </button>
-                        @else
-                            <div></div>
-                        @endif
-
-                        <div class="footer-actions" style="display: flex; gap: 0.5rem;">
-                            <button type="button" wire:click="closeModal" class="btn-cancel" style="background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;">
-                                Cancel
-                            </button>
-                            <button type="submit" class="btn-submit" wire:loading.attr="disabled"
-                                style="background: #238636; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;">
-                                <span wire:loading.remove
-                                    wire:target="saveTask">{{ $isEditing ? 'Save Changes' : 'Create Task' }}</span>
-                                <span wire:loading wire:target="saveTask">Saving...</span>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
-
-    <!-- Delete Confirmation Modal -->
-    @if($showDeleteModal)
-        <div class="modal-overlay delete-overlay" wire:click.self="cancelDelete">
-            <div class="delete-confirmation" wire:click.stop>
-                <h2>Confirm Delete</h2>
-                <p>Are you sure you want to delete this task? This action cannot be undone.</p>
-
-                <div class="delete-actions">
-                    <button type="button" wire:click="performDelete" class="btn-confirm-delete"
-                        wire:loading.attr="disabled">
-                        <span wire:loading.remove wire:target="performDelete">Yes, Delete</span>
-                        <span wire:loading wire:target="performDelete">Deleting...</span>
-                    </button>
-                    <button type="button" wire:click="cancelDelete" class="btn-cancel-delete" wire:loading.attr="disabled">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    @endif
+    <livewire:add-modal :boardId="$boardId" wire:key="table-add-modal" />
 </div>
-
-<script>
-    document.addEventListener('livewire:initialized', () => {
-        Livewire.on('close-modal', () => {
-            @this.showModal = false;
-        });
-    });
-</script>

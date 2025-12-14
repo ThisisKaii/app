@@ -63,11 +63,16 @@ class TableView extends Component
         $this->board = Board::findOrFail($boardId);
     }
 
-    public function getTasks()
+    public $expandedGroups = [];
+
+    public function getGroups()
     {
         try {
-            $query = Task::where('board_id', $this->boardId)
-                ->with(['assignee', 'tags'])
+            $query = \App\Models\TaskGroup::where('board_id', $this->boardId)
+                ->with(['tasks.users', 'tasks.tags'])
+                ->withCount(['tasks', 'tasks as completed_tasks_count' => function ($query) {
+                    $query->whereNotNull('completed_at');
+                }])
                 ->orderBy('order');
 
             if ($this->statusFilter) {
@@ -75,17 +80,25 @@ class TableView extends Component
             }
 
             if ($this->priorityFilter) {
-                $query->where('priority', $this->priorityFilter);
+                $query->whereHas('tasks', function($q) {
+                    $q->where('priority', $this->priorityFilter);
+                });
             }
 
             if ($this->assigneeFilter) {
-                $query->whereHas('assignee', function ($q) {
+                $query->whereHas('tasks.users', function ($q) {
                     $q->where('name', $this->assigneeFilter);
                 });
             }
 
             if ($this->searchFilter) {
-                $query->where('title', 'like', '%' . $this->searchFilter . '%');
+                $query->where(function($q) {
+                    $q->where('title', 'like', '%' . $this->searchFilter . '%')
+                      ->orWhereHas('tasks', function($t) {
+                          $t->where('title', 'like', '%' . $this->searchFilter . '%')
+                            ->orWhere('type', 'like', '%' . $this->searchFilter . '%');
+                      });
+                });
             }
 
             return $query->get();
@@ -93,6 +106,15 @@ class TableView extends Component
         } catch (\Exception $e) {
             Log::error('TableView Error: ' . $e->getMessage());
             return collect([]);
+        }
+    }
+
+    public function toggleGroup($groupId)
+    {
+        if (in_array($groupId, $this->expandedGroups)) {
+            $this->expandedGroups = array_diff($this->expandedGroups, [$groupId]);
+        } else {
+            $this->expandedGroups[] = $groupId;
         }
     }
 
@@ -153,6 +175,28 @@ class TableView extends Component
         }
 
         $this->showModal = true;
+    }
+
+    public function toggleTaskCompletion($taskId)
+    {
+        try {
+            // Check authorization
+            if (!Gate::allows('updateTask', $this->board)) {
+                return;
+            }
+
+            $task = Task::find($taskId);
+
+            if ($task) {
+                $task->update([
+                    'completed_at' => $task->completed_at ? null : now()
+                ]);
+
+                $this->dispatch('taskSaved'); // Trigger refresh
+            }
+        } catch (\Exception $e) {
+            Log::error('Task completion toggle error: ' . $e->getMessage());
+        }
     }
 
     public function saveTask()
@@ -375,7 +419,7 @@ class TableView extends Component
     public function render()
     {
         return view('livewire.table-view', [
-            'tasks' => $this->getTasks(),
+            'groups' => $this->getGroups(),
             'users' => $this->getUsers(),
         ]);
     }

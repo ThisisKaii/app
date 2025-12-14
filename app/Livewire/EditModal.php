@@ -11,7 +11,7 @@ class EditModal extends Component
 {
     public $board, $status, $tasks = [];
     public $showModal = false, $taskId = null;
-    public $title = '', $description = '', $type = '', $priority = '';
+    public $title = '', $description = '', $type = '', $priority = 'low';
     public $taskStatus = '', $due_date = null, $url = '', $assignee_id = null, $tagsInput = '';
 
     public $availableColors = ['#ef4444', '#f59e0b', '#eab308', '#22c55e', '#3b82f6', '#6366f1', '#a855f7', '#ec4899'];
@@ -53,7 +53,7 @@ class EditModal extends Component
             $this->title = $task->title;
             $this->description = $task->description ?? '';
             $this->type = $task->type ?? '';
-            $this->priority = $task->priority ?? '';
+            $this->priority = $task->priority ?? 'low';
             $this->taskStatus = $task->status;
             $this->due_date = $task->due_date?->format('Y-m-d');
             $this->url = $task->url ?? '';
@@ -73,13 +73,14 @@ class EditModal extends Component
         $this->validate([
             'title' => 'required|string|max:255',
             'taskStatus' => 'required|string',
+            'priority' => 'required|in:low,medium,high',
         ]);
-
+        
         $data = [
             'title' => $this->title,
             'description' => $this->description,
             'type' => $this->type,
-            'priority' => $this->priority,
+            'priority' => $this->priority ?: 'low', // Fallback just in case
             'status' => $this->taskStatus,
             'due_date' => $this->due_date,
             'url' => $this->url,
@@ -141,7 +142,7 @@ class EditModal extends Component
         $this->title = '';
         $this->description = '';
         $this->type = '';
-        $this->priority = '';
+        $this->priority = 'low';
         $this->taskStatus = $this->status;
         $this->due_date = null;
         $this->url = '';

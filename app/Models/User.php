@@ -64,6 +64,11 @@ class User extends Authenticatable
         return $this->hasMany(Task::class, 'assignee_id');
     }
 
+    public function tasksAssigned()
+    {
+        return $this->belongsToMany(Task::class, 'task_user');
+    }
+
     public function sharedBoards()
     {
         return $this->belongsToMany(Board::class, 'board_members')

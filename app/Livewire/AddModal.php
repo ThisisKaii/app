@@ -14,22 +14,23 @@ class AddModal extends Component
 
     // Component props
     public $boardId;
-    public $status;
+    public $status; // Column status (for new group)
 
-    // Task data
-    public $taskId;
+    // Mode: 'group' or 'task'
+    public $mode = 'task';
+    public $groupId = null;
+    public $entityId = null; // ID of the group or task being edited
     public $isEditing = false;
 
     // Form fields
-    public $title = '';
-    public $type = '';
-    public $priority = '';
+    public $title = ''; // For Group Title
+    public $type = ''; // For Task Type
+    public $priority = 'low';
     public $due_date = '';
     public $url = '';
-    public $assignee_id = null;
+    public $assignee_ids = []; // Array for multiple assignees
 
-
-    public function mount($boardId, $status)
+    public function mount($boardId, $status = 'to_do')
     {
         $this->boardId = $boardId;
         $this->status = $status;
@@ -38,7 +39,8 @@ class AddModal extends Component
     public function getListeners()
     {
         return [
-            "open-modal-{$this->status}" => 'openModal',
+            'open-group-modal' => 'openGroupModal',
+            'open-task-modal' => 'openTaskModal',
         ];
     }
 
@@ -48,94 +50,151 @@ class AddModal extends Component
         return $board ? $board->members()->orderBy('name')->get() : collect([]);
     }
 
-    public function openModal($taskId = null)
+    public function openGroupModal($status = null, $groupId = null)
     {
-        // Prevent multiple opens
-        if ($this->show) {
-            return;
-        }
-
-        // Reset form
-        $this->title = '';
-        $this->type = '';
-        $this->priority = '';
-        $this->due_date = '';
+        $this->resetForm();
+        $this->mode = 'group';
         
-        // Default to current user for new tasks
-        $this->assignee_id = auth()->id();
+        if ($groupId) {
+            $this->loadGroup($groupId);
+        } else {
+            $this->status = $status ?? 'to_do';
+        }
+        
+        $this->show = true;
+    }
 
-        $this->taskId = null;
-        $this->isEditing = false;
-        $this->showDeleteConfirm = false;
+    public function openTaskModal($taskId = null, $groupId = null)
+    {
+        $this->resetForm();
+        $this->mode = 'task';
 
-        $this->resetValidation();
-
-        // Load task if editing
         if ($taskId) {
             $this->loadTask($taskId);
+        } elseif ($groupId) {
+            $this->groupId = $groupId;
+            $this->assignee_ids = [auth()->id()];
         }
-
+        
         $this->show = true;
+    }
+
+    private function loadGroup($groupId)
+    {
+        $group = \App\Models\TaskGroup::find($groupId);
+        if (!$group) return;
+
+        $this->entityId = $group->id;
+        $this->isEditing = true;
+        $this->title = $group->title;
+        $this->status = $group->status;
     }
 
     private function loadTask($taskId)
     {
-        $task = Task::find($taskId);
+        $task = Task::with('users')->find($taskId);
+        if (!$task) return;
 
-        if (!$task) {
-            return;
-        }
-
-        $this->taskId = $task->id;
+        $this->entityId = $task->id;
         $this->isEditing = true;
-        $this->title = $task->title;
+        $this->groupId = $task->group_id;
         $this->type = $task->type ?? '';
-        $this->priority = $task->priority ?? '';
+        $this->priority = $task->priority ?? 'low';
         $this->due_date = $task->due_date ? $task->due_date->format('Y-m-d') : '';
-        $this->assignee_id = $task->assignee_id;
+        $this->assignee_ids = $task->users->pluck('id')->toArray();
     }
 
     public function save()
     {
-        $validated = $this->validate([
-            'title' => 'required|string|max:255',
-            'type' => 'nullable|string|max:50',
-            'priority' => 'nullable|in:low,medium,high',
-            'due_date' => 'nullable|date',
-            'assignee_id' => 'nullable|exists:users,id',
-        ]);
-
-        // Convert empty fields to null
-        if (empty($validated['due_date'])) {
-            $validated['due_date'] = null;
-        }
-        if (empty($validated['priority'])) {
-            $validated['priority'] = null;
-        }
-        if (empty($validated['type'])) {
-            $validated['type'] = null;
-        }
-        if (empty($validated['assignee_id'])) {
-            $validated['assignee_id'] = null;
-        }
-
-        if ($this->isEditing && $this->taskId) {
-            Task::findOrFail($this->taskId)->update(array_merge($validated, [
-                'description' => null,
-                'url' => null,
-            ]));
+        if ($this->mode === 'group') {
+            if (!$this->saveGroup()) {
+                return;
+            }
         } else {
-            Task::create(array_merge($validated, [
+            $this->saveTask();
+        }
+
+        $this->dispatch('refreshBoard');
+        $this->closeModal();
+    }
+
+    private function saveGroup()
+    {
+        $this->validate(['title' => 'required|string|max:255']);
+
+        // Check for duplicate title in this board (application level uniqueness)
+        $exists = \App\Models\TaskGroup::where('board_id', $this->boardId)
+            ->where('title', $this->title)
+            ->when($this->isEditing && $this->entityId, function($q) {
+                return $q->where('id', '!=', $this->entityId);
+            })
+            ->exists();
+
+        if ($exists) {
+            $this->addError('title', 'A group with this title already exists on this board.');
+            return false;
+        }
+
+        if ($this->isEditing && $this->entityId) {
+            \App\Models\TaskGroup::find($this->entityId)->update([
+                'title' => $this->title
+            ]);
+        } else {
+            \App\Models\TaskGroup::create([
                 'board_id' => $this->boardId,
+                'title' => $this->title,
                 'status' => $this->status,
+                'order' => \App\Models\TaskGroup::where('board_id', $this->boardId)->where('status', $this->status)->max('order') + 1
+            ]);
+        }
+        
+        return true;
+    }
+
+    private function saveTask()
+    {
+        $this->validate([
+            'type' => 'nullable|string|max:50', // Type is effectively the title now
+            'priority' => 'required|in:low,medium,high',
+            'due_date' => 'nullable|date',
+            'assignee_ids' => 'array'
+        ]);
+        
+        // If type is empty, maybe require it? User said "type are like sub category".
+        if (empty($this->type)) $this->type = 'Task'; 
+        
+        // Determine status from Group
+        $groupStatus = 'to_do';
+        if ($this->groupId) {
+            $group = \App\Models\TaskGroup::find($this->groupId);
+            if ($group) {
+                $groupStatus = $group->status;
+            }
+        }
+
+        $data = [
+            'type' => $this->type,
+            'priority' => $this->priority,
+            'due_date' => $this->due_date ?: null,
+        ];
+
+        if ($this->isEditing && $this->entityId) {
+            $task = Task::find($this->entityId);
+            $task->update($data);
+        } else {
+            $task = Task::create(array_merge($data, [
+                'board_id' => $this->boardId,
+                'group_id' => $this->groupId,
                 'user_id' => auth()->id(),
-                'description' => null,
-                'url' => null,
+                'status' => $groupStatus, // Use group status instead of hardcoded 'to_do'
+                // Default props
+                'title' => $this->type, // Legacy title field
+                'order' => Task::where('group_id', $this->groupId)->max('order') + 1
             ]));
         }
 
-        $this->dispatch('task-updated');
-        $this->closeModal();
+        // Sync users
+        $task->users()->sync($this->assignee_ids);
     }
 
     public function askDelete()
@@ -150,9 +209,13 @@ class AddModal extends Component
 
     public function delete()
     {
-        if ($this->taskId) {
-            Task::find($this->taskId)->delete();
-            $this->dispatch('task-updated');
+        if ($this->entityId) {
+            if ($this->mode === 'group') {
+                \App\Models\TaskGroup::find($this->entityId)->delete();
+            } else {
+                Task::find($this->entityId)->delete();
+            }
+            $this->dispatch('refreshBoard');
         }
 
         $this->closeModal();
@@ -162,16 +225,19 @@ class AddModal extends Component
     {
         $this->show = false;
         $this->showDeleteConfirm = false;
+        $this->resetForm();
+    }
 
-        // Reset all form fields
+    private function resetForm()
+    {
         $this->title = '';
         $this->type = '';
-        $this->priority = '';
+        $this->priority = 'low';
         $this->due_date = '';
-
-        $this->taskId = null;
+        $this->assignee_ids = [];
+        $this->entityId = null;
         $this->isEditing = false;
-
+        $this->groupId = null;
         $this->resetValidation();
     }
 
