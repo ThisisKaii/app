@@ -250,6 +250,9 @@
                 </tbody>
             </table>
         </div>
+        <div class="mt-4 px-4">
+            {{ $groups->links() }}
+        </div>
     @else
         <div class="empty-state">
             <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,4 +1,4 @@
-<div class="table-container" wire:poll.10s.keep-alive>
+<div class="table-container" wire:poll.5s.keep-alive>
     <!-- Budget Summary Header -->
     <div class="budget-summary-header-compact">
         <div class="summary-stats">
@@ -35,12 +35,14 @@
                 Filter
             </button>
 
+            @can('createTask', $this->board)
             <button class="add-task-btn" wire:click="openCategoryModal()">
                 <svg class="stat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
                 New Category
             </button>
+            @endcan
 
             <span class="stat-badge">
                 <svg class="stat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,9 +143,9 @@
                                 </div>
                             </td>
                             <td>
-                                <button class="expense-count-btn" wire:click="openCategoryModal({{ $category->id }})">
+                                <span class="expense-count-text">
                                     {{ $category->expenses->count() }} {{ Str::plural('item', $category->expenses->count()) }}
-                                </button>
+                                </span>
                             </td>
                             <td>
                                 <div class="action-buttons">
@@ -167,6 +169,9 @@
                     @endforeach
                 </tbody>
             </table>
+        </div>
+        <div class="mt-4 px-4">
+            {{ $categories->links() }}
         </div>
     @else
         <div class="empty-state">
@@ -198,7 +203,8 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label>Category Title <span class="required">*</span></label>
-                            <input type="text" wire:model="categoryTitle" required>
+                            <input type="text" wire:model="categoryTitle" required
+                                @disabled(!Gate::allows('updateTask', $this->board) && $categoryId)>
                             @error('categoryTitle')
                                 <span class="error-message">{{ $message }}</span>
                             @enderror
@@ -209,7 +215,8 @@
                                 <label>Estimated Amount <span class="required">*</span></label>
                                 <div class="input-with-prefix">
                                     <span class="input-prefix">$</span>
-                                    <input type="number" wire:model="amountEstimated" step="0.01" min="0" required>
+                                    <input type="number" wire:model="amountEstimated" step="0.01" min="0" required
+                                        @disabled(!Gate::allows('updateTask', $this->board) && $categoryId)>
                                 </div>
                                 @error('amountEstimated')
                                     <span class="error-message">{{ $message }}</span>
@@ -218,7 +225,7 @@
 
                             <div class="form-group">
                                 <label>Status</label>
-                                <select wire:model="categoryStatus">
+                                <select wire:model="categoryStatus" @disabled(!Gate::allows('updateTask', $this->board) && $categoryId)>
                                     <option value="draft">Draft</option>
                                     <option value="pending">Pending</option>
                                     <option value="approved">Approved</option>
@@ -230,7 +237,8 @@
 
                         <div class="form-group">
                             <label>Description</label>
-                            <textarea wire:model="categoryDescription" rows="3"></textarea>
+                            <textarea wire:model="categoryDescription" rows="3"
+                                @disabled(!Gate::allows('updateTask', $this->board) && $categoryId)></textarea>
                         </div>
 
                         @if($categoryId)
@@ -285,20 +293,24 @@
 
                     <div class="modal-footer">
                         @if($categoryId)
+                            @can('updateTask', $this->board)
                             <button type="button" wire:click="confirmDeleteCategory({{ $categoryId }})" class="btn-delete">
                                 Delete Category
                             </button>
+                            @endcan
                         @else
                             <div></div>
                         @endif
 
                         <div class="footer-actions">
                             <button type="button" wire:click="closeCategoryModal" class="btn-cancel">Cancel</button>
-                            <button type="submit" class="btn-submit" wire:loading.attr="disabled">
-                                <span wire:loading.remove
-                                    wire:target="saveCategory">{{ $categoryId ? 'Save Changes' : 'Create Category' }}</span>
-                                <span wire:loading wire:target="saveCategory">Saving...</span>
-                            </button>
+                            @if(Gate::allows('updateTask', $this->board) || (!$categoryId && Gate::allows('createTask', $this->board)))
+                                <button type="submit" class="btn-submit" wire:loading.attr="disabled">
+                                    <span wire:loading.remove
+                                        wire:target="saveCategory">{{ $categoryId ? 'Save Changes' : 'Create Category' }}</span>
+                                    <span wire:loading wire:target="saveCategory">Saving...</span>
+                                </button>
+                            @endif
                         </div>
                     </div>
                 </form>

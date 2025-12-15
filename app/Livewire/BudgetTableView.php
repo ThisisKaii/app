@@ -9,8 +9,12 @@ use App\Models\BudgetCategory;
 use App\Models\Expenses;
 use Illuminate\Support\Facades\Gate;
 
+use Livewire\WithPagination;
+
 class BudgetTableView extends Component
 {
+    use WithPagination;
+
     public $boardId;
     public $board;
     public $budget;
@@ -80,7 +84,12 @@ class BudgetTableView extends Component
             $query->where('title', 'like', '%' . $this->searchFilter . '%');
         }
 
-        return $query->get();
+        return $query->paginate(10);
+    }
+
+    public function paginationView()
+    {
+        return 'livewire.pagination-dark';
     }
 
     public function toggleFilters()
@@ -98,8 +107,8 @@ class BudgetTableView extends Component
     public function openCategoryModal($categoryId = null)
     {
         // Fix: Use board permissions instead of task permissions
-        if (!Gate::allows('update', $this->board)) {
-            session()->flash('error', 'You are not authorized to manage categories.');
+        if (!Gate::allows('viewTasks', $this->board)) {
+            session()->flash('error', 'You are not authorized to view categories.');
             return;
         }
 
@@ -137,9 +146,17 @@ class BudgetTableView extends Component
             ];
 
             if ($this->categoryId) {
+                if (!Gate::allows('updateTask', $this->board)) {
+                    session()->flash('error', 'You are not authorized to update details.');
+                    return;
+                }
                 $category = BudgetCategory::find($this->categoryId);
                 $category->update($data);
             } else {
+                if (!Gate::allows('createTask', $this->board)) {
+                    session()->flash('error', 'You are not authorized to create categories.');
+                    return;
+                }
                 $maxOrder = BudgetCategory::where('budget_id', $this->budget->id)->max('order') ?? -1;
                 $data['budget_id'] = $this->budget->id;
                 $data['order'] = $maxOrder + 1;
@@ -166,7 +183,7 @@ class BudgetTableView extends Component
     public function deleteCategory()
     {
         // Fix: Use board permissions instead of task permissions
-        if (!Gate::allows('delete', $this->board)) {
+        if (!Gate::allows('updateTask', $this->board)) {
             session()->flash('error', 'You are not authorized to delete categories.');
             return;
         }
@@ -210,7 +227,7 @@ class BudgetTableView extends Component
     public function openExpenseModal($categoryId, $expenseId = null)
     {
         // Fix: Use board permissions instead of task permissions
-        if (!Gate::allows('update', $this->board)) {
+        if (!Gate::allows('addExpense', $this->board)) {
             session()->flash('error', 'You are not authorized to manage expenses.');
             return;
         }
@@ -269,7 +286,7 @@ class BudgetTableView extends Component
     public function deleteExpense()
     {
         // Fix: Use board permissions instead of task permissions
-        if (!Gate::allows('delete', $this->board)) {
+        if (!Gate::allows('addExpense', $this->board)) {
             session()->flash('error', 'You are not authorized to delete expenses.');
             return;
         }

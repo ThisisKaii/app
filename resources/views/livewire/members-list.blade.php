@@ -1,4 +1,4 @@
-<div class="members-list-container" wire:poll.10s.keep-alive>
+<div class="members-list-container" wire:poll.5s.keep-alive>
     <!-- Header -->
     <div class="table-header">
         <h2 class="table-title">Board Members</h2>
