@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BudgetCategory;
 use App\Models\Budgets;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
@@ -41,7 +42,7 @@ class BudgetCategoryController extends Controller
 
         // Check authorization through the board
         try {
-            Gate::authorize('viewTasks', $budget->board);
+            Gate::authorize('updateTask', $budget->board);
         } catch (\Exception $e) {
             Log::error('Authorization failed', [
                 'category_id' => $categoryId,
@@ -78,6 +79,14 @@ class BudgetCategoryController extends Controller
                 'status' => $validated['status'],
                 'order' => $validated['new_order'] ?? $category->order,
             ]);
+
+            ActivityLog::log(
+                $category->budget->board_id,
+                BudgetCategory::class,
+                $category->id,
+                'update_status',
+                "Changed status to " . ucfirst($validated['status'])
+            );
 
             Log::info('Budget category updated successfully', [
                 'category_id' => $categoryId,

@@ -18,7 +18,25 @@
 
                 <!-- Form -->
                 <form wire:submit.prevent="save">
-                    <div style="padding: 1.5rem;">
+                    <div style="padding: 1.5rem;" x-data="{ tab: 'details' }">
+                        <!-- Tabs Header -->
+                        <div style="display: flex; gap: 1rem; border-bottom: 1px solid #30363d; margin-bottom: 1.5rem; padding-bottom: 0.5rem;">
+                            <button type="button" @click="tab = 'details'" 
+                                style="background: none; border: none; cursor: pointer; font-weight: 600; padding-bottom: 0.5rem; color: #8b949e;"
+                                :style="tab === 'details' ? 'color: #f0f6fc; border-bottom: 2px solid #f78166;' : ''">
+                                Details
+                            </button>
+                            @if($isEditing && $mode === 'task')
+                                <button type="button" @click="tab = 'activity'" 
+                                    style="background: none; border: none; cursor: pointer; font-weight: 600; padding-bottom: 0.5rem; color: #8b949e;"
+                                    :style="tab === 'activity' ? 'color: #f0f6fc; border-bottom: 2px solid #58a6ff;' : ''">
+                                    Activity
+                                </button>
+                            @endif
+                        </div>
+
+                        <!-- Details Tab -->
+                        <div x-show="tab === 'details'">
 
                         @if($mode === 'group')
                             <!-- Title (Group) -->
@@ -87,6 +105,19 @@
                             @endif
                         @endif
 
+                        </div> <!-- End Details Tab -->
+
+                        <!-- Activity Tab -->
+                        @if($isEditing && $mode === 'task')
+                            <div x-show="tab === 'activity'" style="display: none;">
+                                @php
+                                    $taskForLog = \App\Models\Task::find($entityId);
+                                @endphp
+                                @if($taskForLog)
+                                    <livewire:activity-timeline :model="$taskForLog" wire:key="activity-log-{{ $entityId }}" />
+                                @endif
+                            </div>
+                        @endif
                     </div>
 
                     <!-- Footer -->

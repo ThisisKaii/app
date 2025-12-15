@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use Livewire\Attributes\On;
 use App\Models\Task;
+use App\Models\ActivityLog;
 
 class AddModal extends Component
 {
@@ -190,6 +191,14 @@ class AddModal extends Component
         if ($this->isEditing && $this->entityId) {
             $task = Task::find($this->entityId);
             $task->update($data);
+
+            ActivityLog::log(
+                $this->boardId,
+                Task::class,
+                $task->id,
+                'update',
+                "Updated task details"
+            );
         } else {
             $task = Task::create(array_merge($data, [
                 'board_id' => $this->boardId,
@@ -200,6 +209,14 @@ class AddModal extends Component
                 'title' => $this->type, // Legacy title field
                 'order' => Task::where('group_id', $this->groupId)->max('order') + 1
             ]));
+
+            ActivityLog::log(
+                $this->boardId,
+                Task::class,
+                $task->id,
+                'create',
+                "Created task '{$task->title}'"
+            );
         }
 
         // Sync users
@@ -222,7 +239,15 @@ class AddModal extends Component
             if ($this->mode === 'group') {
                 \App\Models\TaskGroup::find($this->entityId)->delete();
             } else {
-                Task::find($this->entityId)->delete();
+                $task = Task::find($this->entityId);
+                ActivityLog::log(
+                    $this->boardId,
+                    Task::class,
+                    $task->id,
+                    'delete',
+                    "Deleted task '{$task->title}'"
+                );
+                $task->delete();
             }
             $this->dispatch('refreshBoard');
         }

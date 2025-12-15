@@ -83,7 +83,7 @@ class BoardPolicy
      */
     public function updateTask(User $user, Board $board)
     {
-        // Only owner and admin can update tasks - members are view-only
+        // Only owner and admin can update tasks
         $member = $board->members()->where('user_id', $user->id)->first();
         return $member && in_array($member->pivot->role, ['owner', 'admin']);
     }
@@ -96,5 +96,14 @@ class BoardPolicy
         // Only owner and admin can delete tasks
         $member = $board->members()->where('user_id', $user->id)->first();
         return $member && in_array($member->pivot->role, ['owner', 'admin']);
+    }
+
+    /**
+     * Determine if the user can add expenses to the board.
+     */
+    public function addExpense(User $user, Board $board)
+    {
+        // All members can add expenses
+        return $board->members()->where('user_id', $user->id)->exists();
     }
 }

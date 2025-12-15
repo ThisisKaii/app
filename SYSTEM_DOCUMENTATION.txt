@@ -1,0 +1,184 @@
+SYSTEM DOCUMENTATION
+====================
+
+1. SYSTEM OVERVIEW
+------------------
+This application is a Project Management & Budgeting System built with Laravel. It allows teams to manage tasks, track budgets, and collaborate in real-time. The system supports multiple board types (e.g., Business, Personal) and implements role-based access control (RBAC).
+
+2. KEY FEATURES
+---------------
+- **Task Management**: Create, edit, delete, and organize tasks into groups.
+- **Kanban & Table Views**: View tasks in a drag-and-drop Kanban board or a structured table view.
+- **Budgeting (Business Boards)**: 
+    - Create budget categories.
+    - Track estimated vs. actual expenses.
+    - Add, edit, and delete expenses.
+    - Status tracking (Draft, Approved, Completed).
+- **Role-Based Access Control (RBAC)**:
+    - **Owner**: Full access to all settings, users, and data.
+    - **Admin**: Can manage tasks, budgets, and team members.
+    - **Member**: Can view content, manage assigned tasks, and add expenses (restricted from changing budget structure).
+- **Real-time Updates**: Live updates for tasks and activities using Livewire polling.
+- **Activity Logging**: Detailed audit logs for actions taken within the system.
+- **Dark Mode Modern UI**: A sleek, dark-themed interface with custom components.
+
+3. TECHNOLOGY STACK
+-------------------
+- **Framework**: Laravel 10.x
+- **Frontend**: Blade Templates, Tailwind CSS
+- **Interactivity**: Livewire 3.x, Alpine.js
+- **Database**: MySQL / SQLite (configurable)
+- **Styling**: Custom "Dark Modern" theme extending Tailwind.
+
+4. INSTALLATION & SETUP
+-----------------------
+1. **Prerequisites**: PHP 8.1+, Composer, Node.js/NPM.
+2. **Clone Repository**: 
+   `git clone <repository-url>`
+3. **Install Dependencies**:
+   `composer install`
+   `npm install`
+4. **Environment Setup**:
+   - Copy `.env.example` to `.env`.
+   - Configure database credentials in `.env`.
+5. **Key Generation**:
+   `php artisan key:generate`
+6. **Database Migration**:
+   `php artisan migrate`
+7. **Build Assets**:
+   `npm run dev` (for development) or `npm run build` (for production).
+8. **Run Server**:
+   `php artisan serve`
+
+5. KEY COMPONENTS
+-----------------
+- **BudgetBoard**: Main component for the budget visualization.
+- **BudgetTableView**: Table representation of the budget.
+- **TableView**: Table representation of tasks.
+- **TaskGroup/Task**: Core models for task management.
+- **BudgetCategory/Expenses**: Core models for financial tracking.
+- **Policies**: `BudgetCategoryPolicy` and `ExpensePolicy` handle authorization logic.
+
+6. ROLES & PERMISSIONS
+----------------------
+| Feature               | Owner | Admin | Member |
+|-----------------------|-------|-------|--------|
+| Create Tasks          | Yes   | Yes   | Yes    |
+| Edit Any Task         | Yes   | Yes   | No     |
+| Edit Own Task         | Yes   | Yes   | Yes    |
+| Manage Budget Structure| Yes   | Yes   | No     |
+| Add Expenses          | Yes   | Yes   | Yes    |
+| Invite Members        | Yes   | Yes   | No     |
+
+7. DIRECTORY STRUCTURE HIGHLIGHTS
+---------------------------------
+- `app/Livewire`: Contains all interactive components (Board, Budget, Table views).
+- `app/Policies`: Authorization logic.
+- `resources/views/livewire`: Frontend Blade templates for components.
+- `routes/web.php`: Application routes.
+
+8. COMPONENT REFERENCE
+-----------------------
+
+### BudgetBoard
+**Class**: `App\Livewire\BudgetBoard`
+**View**: `resources/views/livewire/budget-board.blade.php`
+**Purpose**: Manages the Kanban-style view for Budget Boards.
+**Key Methods**:
+- `mount($boardId)`: Initializes the component with the specific board.
+- `loadBudget()`: Fetches or creates the budget record associated with the board.
+- `openCategoryModal($categoryId)`: Opens the modal to add or edit a budget category.
+- `saveCategory()`: Validates and saves a budget category (handles both create and update).
+- `openExpenseModal($categoryId)`: Opens the modal to add an expense to a specific category.
+- `saveExpense()`: Validates and saves an expense record.
+- `deleteCategory()` / `deleteExpense()`: Handles deletion logic with permission checks.
+
+### BudgetTableView
+**Class**: `App\Livewire\BudgetTableView`
+**View**: `resources/views/livewire/budget-table-view.blade.php`
+**Purpose**: Manages the table view for Budget Boards, including pagination.
+**Key Methods**:
+- `getCategories()`: Returns paginated list of budget categories (10 per page).
+- `paginationView()`: Returns the custom 'livewire.pagination-dark' view.
+- `toggleFilters()`: Toggles the visibility of the filter bar.
+- `saveCategory()`: Handles the creating/editing of categories from the table view.
+
+### TableView
+**Class**: `App\Livewire\TableView`
+**View**: `resources/views/livewire/table-view.blade.php`
+**Purpose**: Manages the table view for standard Task Boards (Grouped by Task Group).
+**Key Methods**:
+- `getGroups()`: Returns paginated list of task groups (10 per page), with nested tasks.
+- `toggleGroup($groupId)`: Expands/collapses a task group in the table.
+- `openTaskModal($taskId)`: Opens the modal to edit a specific task.
+- `toggleTaskCompletion($taskId)`: Marks a task as complete/incomplete.
+- `takeTask($taskId)`: Allows a member to assign a task to themselves.
+
+### Dashboard
+**Class**: `App\Livewire\Dashboard`
+**View**: `resources/views/livewire/dashboard.blade.php`
+**Purpose**: Displays analytics and statistics.
+**Key Methods**:
+- `loadDashboardData()`: Aggregates data for charts and counters.
+- `setDateRange($range)`: Updates the time filter (week, month, quarter, all).
+- `loadBusinessDashboard()`: Calculates budget vs. actuals, utilization rates, and expense breakdowns.
+
+### AddModal
+**Class**: `App\Livewire\AddModal`
+**View**: `resources/views/livewire/add-modal.blade.php`
+**Purpose**: A unified modal for creating new Task Groups or Tasks.
+**Key Methods**:
+- `openGroupModal()`: Sets mode to 'group' and opens the modal.
+- `openTaskModal()`: Sets mode to 'task' and opens the modal.
+- `save()`: Dispatches to `saveGroup()` or `saveTask()` based on mode.
+
+### BudgetCategoryModal
+**Class**: `App\Livewire\BudgetCategoryModal`
+**View**: `resources/views/livewire/budget-category-modal.blade.php`
+**Purpose**: Handles the detailed view and editing of a specific Budget Category and its expenses.
+**Key Methods**:
+- `loadCategories()`: Refreshes category data.
+- `saveCategory()`: Updates category details (Title, Status, Estimated Amount).
+- `openExpenseModal()`: Prepares the nested modal for adding an expense.
+
+### EditModal
+**Class**: `App\Livewire\EditModal`
+**View**: `resources/views/livewire/edit-modal.blade.php`
+**Purpose**: Handles editing of existing tasks.
+**Key Methods**:
+- `loadTasks()`: Refreshes the task list.
+- `openModal($taskId)`: Loads task data into the form.
+- `saveTask()`: Updates the task and syncs tags.
+
+### MembersList
+**Class**: `App\Livewire\MembersList`
+**View**: `resources/views/livewire/members-list.blade.php`
+**Purpose**: Manages board members and invitations.
+**Key Methods**:
+- `addMember()`: Invites a new user to the board.
+- `updateRole($userId, $newRole)`: Changes a member's role (Owner, Admin, Member).
+- `removeMember()`: Removes a user from the board.
+
+9. LOGGING SYSTEM
+-----------------
+The application implements a comprehensive audit logging system.
+- **ActivityLog Model**: Records `board_id`, `user_id`, `model_type` (e.g., Task, Expense), `action_type` (created, updated, deleted), and a description.
+- **Loggable Trait**: Use `use App\Traits\Loggable;` in any model to automatically log creation, updates, and deletions.
+    - **Methods**: `shouldLogActivity()`, `createLog()`, `getLogChanges()`.
+    - **Customization**: Models can define `customCreatedDescription()`, `customUpdatedDescription()`, etc. to override default messages.
+- **Usage**: Automatically tracks changes to Tasks, TaskGroups, BudgetCategories, and Expenses, providing a "who did what and when" audit trail.
+
+10. AUTHORIZATION POLICIES
+--------------------------
+Authorization is handled via Laravel Policies and standard Gates.
+- **BoardPolicy**: The central policy for board-level actions.
+    - `view`/`viewTasks`: Allowed for all members.
+    - `update`/`delete`: Restricted to Owner/Admin.
+    - `addMember`/`removeMember`: Restricted to Owner/Admin.
+    - `createTask`/`updateTask`: Acts as the gate for structural changes (adding/editing Budget Categories). Restricted to Owner/Admin.
+    - `addExpense`: Allowed for all members (enabling collaborative expense tracking).
+- **TaskPolicy**: Granular control for individual tasks.
+    - `update`/`delete`: Owners/Admins can edit all. Members can only edit tasks assigned to them or created by them.
+    - `moveStatus`: Members can move their own tasks.
+- **TaskGroupPolicy**: Controls high-level task grouping.
+    - `update`/`delete`: Restricted to Owner/Admin to prevent members from disrupting the board structure.

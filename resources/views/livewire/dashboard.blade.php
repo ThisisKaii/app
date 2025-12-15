@@ -1,7 +1,7 @@
 
 <!-- resources/views/livewire/dashboard.blade.php -->
 
-<div class="dashboard-wrapper" x-data wire:poll.15s.keep-alive>
+<div class="dashboard-wrapper" x-data wire:poll.5s.keep-alive>
     <!-- Header -->
     <div class="dashboard-header">
         <div>
@@ -146,7 +146,7 @@
                             <h3 class="card-title">Recent Transactions</h3>
                             <button wire:click="toggleAllTransactions" class="stat-subtext" style="background: none; border: none; cursor: pointer; text-decoration: underline;">View All</button>
                         </div>
-                        <div class="item-list">
+                        <div class="item-list custom-scrollbar" style="max-height: 300px; overflow-y: auto;">
                             @forelse($dashboardData['recentExpenses'] as $expense)
                                 <div class="list-item">
                                     <div class="item-left">

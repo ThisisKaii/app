@@ -1,4 +1,4 @@
-<div class="container" wire:poll.10s.keep-alive>
+<div class="container" wire:poll.5s.keep-alive>
     <!-- Individual View (Personal Task List) -->
         <div class="personal-tasks-wrapper">
             <div class="personal-tasks-header">
