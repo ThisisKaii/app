@@ -161,8 +161,8 @@ class BudgetBoard extends Component
         }
         
         // Check authorization
-        if (!Gate::allows('createTask', $this->board)) {
-            session()->flash('error', 'You are not authorized to manage categories.');
+        if (!Gate::allows('viewTasks', $this->board)) {
+            session()->flash('error', 'You are not authorized to view categories.');
             return;
         }
 
@@ -191,6 +191,13 @@ class BudgetBoard extends Component
             'amountEstimated' => 'required|numeric|min:0|max:999999999.99',
             'categoryStatus' => 'required|in:draft,pending,approved,rejected,completed',
         ]);
+
+        // Check authorization
+        $permission = $this->categoryId ? 'updateTask' : 'createTask';
+        if (!Gate::allows($permission, $this->board)) {
+            session()->flash('error', 'You are not authorized to save categories.');
+            return;
+        }
 
         try {
             $data = [
@@ -279,7 +286,7 @@ class BudgetBoard extends Component
 
     public function openExpenseModal($categoryId, $expenseId = null)
     {
-        if (!Gate::allows('createTask', $this->board)) {
+        if (!Gate::allows('addExpense', $this->board)) {
             session()->flash('error', 'You are not authorized to manage expenses.');
             return;
         }
@@ -305,6 +312,11 @@ class BudgetBoard extends Component
             'expenseAmount' => 'required|numeric|min:0|max:999999999.99',
             'expenseDescription' => 'nullable|string|max:500',
         ]);
+
+        if (!Gate::allows('addExpense', $this->board)) {
+            session()->flash('error', 'You are not authorized to save expenses.');
+            return;
+        }
 
         try {
             $data = [
@@ -336,7 +348,7 @@ class BudgetBoard extends Component
 
     public function deleteExpense()
     {
-        if (!Gate::allows('deleteTask', $this->board)) {
+        if (!Gate::allows('addExpense', $this->board)) {
             session()->flash('error', 'You are not authorized to delete expenses.');
             return;
         }

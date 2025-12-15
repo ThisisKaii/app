@@ -7,6 +7,7 @@ use App\Models\Budgets;
 use App\Models\BudgetCategory;
 use App\Models\Expenses;
 use App\Models\Board;
+use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Gate;
 
 class BudgetCategoryModal extends Component
@@ -75,8 +76,8 @@ class BudgetCategoryModal extends Component
         }
 
         // Check authorization
-        if (!Gate::allows('createTask', $this->board)) {
-            session()->flash('error', 'You are not authorized to manage categories.');
+        if (!Gate::allows('viewTasks', $this->board)) {
+            session()->flash('error', 'You are not authorized to view categories.');
             return;
         }
 
@@ -117,6 +118,14 @@ class BudgetCategoryModal extends Component
             if ($this->categoryId) {
                 $category = BudgetCategory::find($this->categoryId);
                 $category->update($data);
+
+                ActivityLog::log(
+                    $this->board->id,
+                    BudgetCategory::class,
+                    $category->id,
+                    'update',
+                    "Updated category details"
+                );
             } else {
                 $maxOrder = BudgetCategory::where('budget_id', $this->budget->id)
                     ->where('status', $this->categoryStatus)
@@ -125,7 +134,15 @@ class BudgetCategoryModal extends Component
                 $data['budget_id'] = $this->budget->id;
                 $data['order'] = $maxOrder + 1;
 
-                BudgetCategory::create($data);
+                $category = BudgetCategory::create($data);
+
+                ActivityLog::log(
+                    $this->board->id,
+                    BudgetCategory::class,
+                    $category->id,
+                    'create',
+                    "Created category '{$category->title}'"
+                );
             }
 
             session()->flash('success', 'Category saved successfully!');
@@ -155,6 +172,13 @@ class BudgetCategoryModal extends Component
         try {
             $category = BudgetCategory::find($this->deleteCategoryId);
             if ($category) {
+                ActivityLog::log(
+                    $this->board->id,
+                    BudgetCategory::class,
+                    $category->id,
+                    'delete',
+                    "Deleted category '{$category->title}'"
+                );
                 $category->delete();
                 session()->flash('success', 'Category deleted successfully!');
             }
@@ -197,7 +221,7 @@ class BudgetCategoryModal extends Component
     public function openExpenseModal($categoryId, $expenseId = null)
     {
         // Check authorization
-        if (!Gate::allows('createTask', $this->board)) {
+        if (!Gate::allows('addExpense', $this->board)) {
             session()->flash('error', 'You are not authorized to manage expenses.');
             return;
         }
@@ -233,9 +257,25 @@ class BudgetCategoryModal extends Component
             if ($this->expenseId) {
                 $expense = Expenses::find($this->expenseId);
                 $expense->update($data);
+
+                ActivityLog::log(
+                    $this->board->id,
+                    BudgetCategory::class,
+                    $this->selectedCategoryId,
+                    'update_expense',
+                    "Updated expense amount to $" . number_format($this->expenseAmount, 2)
+                );
             } else {
                 $data['budget_category_id'] = $this->selectedCategoryId;
                 Expenses::create($data);
+
+                ActivityLog::log(
+                    $this->board->id,
+                    BudgetCategory::class,
+                    $this->selectedCategoryId,
+                    'add_expense',
+                    "Added expense of $" . number_format($this->expenseAmount, 2)
+                );
             }
 
             session()->flash('success', 'Expense saved successfully!');
@@ -256,7 +296,7 @@ class BudgetCategoryModal extends Component
     public function deleteExpense()
     {
         // Check authorization
-        if (!Gate::allows('deleteTask', $this->board)) {
+        if (!Gate::allows('addExpense', $this->board)) {
             session()->flash('error', 'You are not authorized to delete expenses.');
             return;
         }
@@ -264,6 +304,13 @@ class BudgetCategoryModal extends Component
         try {
             $expense = Expenses::find($this->deleteExpenseId);
             if ($expense) {
+                ActivityLog::log(
+                    $this->board->id,
+                    BudgetCategory::class,
+                    $expense->budget_category_id,
+                    'delete_expense',
+                    "Deleted expense of $" . number_format($expense->amount, 2)
+                );
                 $expense->delete();
                 session()->flash('success', 'Expense deleted successfully!');
             }

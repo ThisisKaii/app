@@ -1,4 +1,4 @@
-<div class="teams" wire:poll.10s.keep-alive>
+<div class="teams" wire:poll.5s.keep-alive>
     <div class="teams-wrapper">
         <!-- Teams Header -->
         <div class="teams-header">

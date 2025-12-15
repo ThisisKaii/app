@@ -11,8 +11,12 @@ use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
+use Livewire\WithPagination;
+
 class TableView extends Component
 {
+    use WithPagination;
+
     public $boardId;
     public $board;
 
@@ -119,11 +123,11 @@ class TableView extends Component
                 });
             }
 
-            return $query->get();
+            return $query->paginate(10);
 
         } catch (\Exception $e) {
             Log::error('TableView Error: ' . $e->getMessage());
-            return collect([]);
+            return \App\Models\TaskGroup::where('id', -1)->paginate(10);
         }
     }
 
@@ -139,6 +143,11 @@ class TableView extends Component
     public function getUsers()
     {
         return $this->board->members()->orderBy('name')->get();
+    }
+
+    public function paginationView()
+    {
+        return 'livewire.pagination-dark';
     }
 
     public function toggleFilters()

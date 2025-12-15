@@ -83,12 +83,31 @@
                 </div>
 
                 <form wire:submit.prevent="saveCategory">
-                    <div class="modal-body">
-                        <!-- Title -->
-                        <div class="form-group">
-                            <label>Category Title <span class="required">*</span></label>
-                            <input type="text" wire:model="categoryTitle" required
-                                placeholder="e.g., Hardware Cleaning, Marketing">
+                    <div class="modal-body" x-data="{ tab: 'details' }">
+                        <!-- Tabs Header -->
+                        <div style="display: flex; gap: 1rem; border-bottom: 1px solid #30363d; margin-bottom: 1.5rem; padding-bottom: 0.5rem;">
+                            <button type="button" @click="tab = 'details'" 
+                                style="background: none; border: none; cursor: pointer; font-weight: 600; padding-bottom: 0.5rem; color: #8b949e;"
+                                :style="tab === 'details' ? 'color: #f0f6fc; border-bottom: 2px solid #f78166;' : ''">
+                                Details
+                            </button>
+                            @if($categoryId)
+                                <button type="button" @click="tab = 'activity'" 
+                                    style="background: none; border: none; cursor: pointer; font-weight: 600; padding-bottom: 0.5rem; color: #8b949e;"
+                                    :style="tab === 'activity' ? 'color: #f0f6fc; border-bottom: 2px solid #58a6ff;' : ''">
+                                    Activity
+                                </button>
+                            @endif
+                        </div>
+
+                        <!-- Details Tab -->
+                        <div x-show="tab === 'details'">
+                            <!-- Title -->
+                            <div class="form-group">
+                                <label>Category Title <span class="required">*</span></label>
+                                <input type="text" wire:model="categoryTitle" required
+                                    placeholder="e.g., Hardware Cleaning, Marketing"
+                                    @disabled(!Gate::allows('updateTask', $this->board) && $categoryId)>
                             @error('categoryTitle')
                                 <span class="error-message">{{ $message }}</span>
                             @enderror
@@ -101,7 +120,8 @@
                                 <div class="input-with-prefix">
                                     <span class="input-prefix">$</span>
                                     <input type="number" wire:model="amountEstimated" step="0.01" min="0" required
-                                        placeholder="0.00">
+                                        placeholder="0.00"
+                                        @disabled(!Gate::allows('updateTask', $this->board) && $categoryId)>
                                 </div>
                                 @error('amountEstimated')
                                     <span class="error-message">{{ $message }}</span>
@@ -110,7 +130,7 @@
 
                             <div class="form-group">
                                 <label>Status</label>
-                                <select wire:model="categoryStatus">
+                                <select wire:model="categoryStatus" @disabled(!Gate::allows('updateTask', $this->board) && $categoryId)>
                                     <option value="draft">Draft</option>
                                     <option value="pending">⏳ Pending</option>
                                     <option value="approved">✅ Approved</option>
@@ -124,7 +144,8 @@
                         <div class="form-group">
                             <label>Description</label>
                             <textarea wire:model="categoryDescription" rows="3"
-                                placeholder="Add details about this category..."></textarea>
+                                placeholder="Add details about this category..."
+                                @disabled(!Gate::allows('updateTask', $this->board) && $categoryId)></textarea>
                         </div>
 
                         <!-- Expenses List (if editing) -->
@@ -189,9 +210,22 @@
                                 </div>
                             @endif
                         @endif
-                    </div>
+                    </div> <!-- End Details Tab -->
 
-                    <div class="modal-footer">
+                    <!-- Activity Tab -->
+                    @if($categoryId)
+                        <div x-show="tab === 'activity'" style="display: none;">
+                            @php
+                                $categoryForLog = \App\Models\BudgetCategory::find($categoryId);
+                            @endphp
+                            @if($categoryForLog)
+                                <livewire:activity-timeline :model="$categoryForLog" wire:key="activity-log-{{ $categoryId }}" />
+                            @endif
+                        </div>
+                    @endif
+                </div>
+
+                <div class="modal-footer">
                         @if($categoryId)
                             <button type="button" wire:click="confirmDeleteCategory({{ $categoryId }})" class="btn-delete"
                                 wire:loading.attr="disabled">
@@ -203,11 +237,14 @@
 
                         <div class="footer-actions">
                             <button type="button" wire:click="closeCategoryModal" class="btn-cancel">Cancel</button>
-                            <button type="submit" class="btn-submit" wire:loading.attr="disabled">
-                                <span wire:loading.remove
-                                    wire:target="saveCategory">{{ $categoryId ? 'Save Changes' : 'Create Category' }}</span>
-                                <span wire:loading wire:target="saveCategory">Saving...</span>
-                            </button>
+                            
+                            @if(Gate::allows('updateTask', $this->board) || (!$categoryId && Gate::allows('createTask', $this->board)))
+                                <button type="submit" class="btn-submit" wire:loading.attr="disabled">
+                                    <span wire:loading.remove
+                                        wire:target="saveCategory">{{ $categoryId ? 'Save Changes' : 'Create Category' }}</span>
+                                    <span wire:loading wire:target="saveCategory">Saving...</span>
+                                </button>
+                            @endif
                         </div>
                     </div>
                 </form>

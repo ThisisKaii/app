@@ -1,4 +1,4 @@
-<div wire:poll.10s.keep-alive>
+<div wire:poll.5s.keep-alive>
     <!-- Main Content -->
     <div class="container">
         <!-- Budget Summary Section (Split Bars Design) -->
@@ -114,7 +114,9 @@
                                 $progress = $category->getProgressPercentage();
                             @endphp
 
-                            <div wire:key="category-{{ $category->id }}" class="budget-category-card" draggable="true"
+                            <div wire:key="category-{{ $category->id }}" class="budget-category-card" 
+                                draggable="{{ Gate::allows('updateTask', $this->board) ? 'true' : 'false' }}"
+                                style="{{ !Gate::allows('updateTask', $this->board) ? 'cursor: not-allowed; opacity: 0.8;' : '' }}"
                                 data-category-id="{{ $category->id }}"
                                 wire:click.stop="openCategoryModal({{ $category->id }}, '{{ $category->status }}')">
 
@@ -162,9 +164,11 @@
                         @endforeach
 
                         <!-- Add New Category Button -->
+                        @can('createTask', $this->board)
                         <button class="add-card" wire:click.stop="openCategoryModal(null, '{{ $status }}')">
                             <span>+</span> New Category
                         </button>
+                        @endcan
                     </div>
                 </div>
             @endforeach
@@ -246,7 +250,8 @@
                         <div class="form-group">
                             <label>Category Title <span class="required">*</span></label>
                             <input type="text" wire:model="categoryTitle" required
-                                placeholder="e.g., Hardware Cleaning, Marketing">
+                                placeholder="e.g., Hardware Cleaning, Marketing"
+                                @disabled(!Gate::allows('updateTask', $this->board) && $categoryId)>
                             @error('categoryTitle')
                                 <span class="error-message">{{ $message }}</span>
                             @enderror
@@ -259,7 +264,8 @@
                                 <div class="input-with-prefix">
                                     <span class="input-prefix">$</span>
                                     <input type="number" wire:model="amountEstimated" step="0.01" min="0" required
-                                        placeholder="0.00">
+                                        placeholder="0.00"
+                                        @disabled(!Gate::allows('updateTask', $this->board) && $categoryId)>
                                 </div>
                                 @error('amountEstimated')
                                     <span class="error-message">{{ $message }}</span>
@@ -268,7 +274,7 @@
 
                             <div class="form-group">
                                 <label>Status</label>
-                                <select wire:model="categoryStatus">
+                                <select wire:model="categoryStatus" @disabled(!Gate::allows('updateTask', $this->board) && $categoryId)>
                                     <option value="draft">Draft</option>
                                     <option value="pending">⏳ Pending</option>
                                     <option value="approved">✅ Approved</option>
@@ -282,7 +288,8 @@
                         <div class="form-group">
                             <label>Description</label>
                             <textarea wire:model="categoryDescription" rows="3"
-                                placeholder="Add details about this category..."></textarea>
+                                placeholder="Add details about this category..."
+                                @disabled(!Gate::allows('updateTask', $this->board) && $categoryId)></textarea>
                         </div>
 
                         <!-- Expenses List (if editing) -->
@@ -361,11 +368,13 @@
 
                         <div class="footer-actions">
                             <button type="button" wire:click="closeCategoryModal" class="btn-cancel">Cancel</button>
-                            <button type="submit" class="btn-submit" wire:loading.attr="disabled">
-                                <span wire:loading.remove
-                                    wire:target="saveCategory">{{ $categoryId ? 'Save Changes' : 'Create Category' }}</span>
-                                <span wire:loading wire:target="saveCategory">Saving...</span>
-                            </button>
+                            @if(Gate::allows('updateTask', $this->board) || (!$categoryId && Gate::allows('createTask', $this->board)))
+                                <button type="submit" class="btn-submit" wire:loading.attr="disabled">
+                                    <span wire:loading.remove
+                                        wire:target="saveCategory">{{ $categoryId ? 'Save Changes' : 'Create Category' }}</span>
+                                    <span wire:loading wire:target="saveCategory">Saving...</span>
+                                </button>
+                            @endif
                         </div>
                     </div>
                 </form>
@@ -539,15 +548,22 @@
         // Make all current category cards draggable
         const cards = budgetBoard.querySelectorAll('.budget-category-card');
         console.log(`Found ${cards.length} budget category cards`);
-        cards.forEach(card => {
-            card.setAttribute('draggable', 'true');
-        });
+        // Do not force draggable=true here, let the server-side rendering control it based on permissions
+        // cards.forEach(card => {
+        //     card.setAttribute('draggable', 'true');
+        // });
     }
 
     function handleBudgetDragStart(e) {
         // Check if the dragged element is a budget category card
         const card = e.target.closest('.budget-category-card');
         if (!card) return;
+
+        // Respect the draggable attribute
+        if (card.getAttribute('draggable') === 'false') {
+            e.preventDefault();
+            return;
+        }
 
         e.stopPropagation();
 
