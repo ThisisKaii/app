@@ -66,7 +66,7 @@ A powerful Laravel-based application for managing tasks, tracking budgets, and e
 
 For detailed system documentation, please refer to the `SYSTEM_DOCUMENTATION.txt` file located in this directory.
 
--   [Facebook Support Group](https://www.facebook.com/asingua.joshua499/)
+- My [Facebook Profile](https://www.facebook.com/asingua.joshua499/)
 
 ## License
 
