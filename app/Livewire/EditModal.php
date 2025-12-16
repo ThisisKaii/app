@@ -89,10 +89,11 @@ class EditModal extends Component
 
         if ($this->taskId) {
             // UPDATING EXISTING TASK
+            \Illuminate\Support\Facades\Gate::authorize('updateTask', $this->board);
             $task = Task::find($this->taskId);
             $task->update($data);
         } else {
-
+            \Illuminate\Support\Facades\Gate::authorize('createTask', $this->board);
             $data['board_id'] = $this->board->id;
             $data['user_id'] = auth()->id();
             $data['order'] = Task::where('board_id', $this->board->id)

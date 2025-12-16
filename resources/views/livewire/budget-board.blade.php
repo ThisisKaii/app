@@ -10,6 +10,7 @@
                     </svg>
                     Budget Overview
                 </div>
+                @can('update', $board)
                 <button class="btn-primary" wire:click="openBudgetModal" type="button">
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -17,6 +18,7 @@
                     </svg>
                     Edit Budget
                 </button>
+                @endcan
             </div>
 
             <div class="budget-stats-grid">
@@ -116,7 +118,7 @@
 
                             <div wire:key="category-{{ $category->id }}" class="budget-category-card" 
                                 draggable="{{ Gate::allows('updateTask', $this->board) ? 'true' : 'false' }}"
-                                style="{{ !Gate::allows('updateTask', $this->board) ? 'cursor: not-allowed; opacity: 0.8;' : '' }}"
+                                style="{{ !Gate::allows('updateTask', $this->board) ? 'opacity: 0.8;' : '' }}"
                                 data-category-id="{{ $category->id }}"
                                 wire:click.stop="openCategoryModal({{ $category->id }}, '{{ $category->status }}')">
 

@@ -146,10 +146,17 @@ class AddModal extends Component
         }
 
         if ($this->isEditing && $this->entityId) {
-            \App\Models\TaskGroup::find($this->entityId)->update([
+            $group = \App\Models\TaskGroup::find($this->entityId);
+            \Illuminate\Support\Facades\Gate::authorize('update', $group);
+            $group->update([
                 'title' => $this->title
             ]);
         } else {
+            // Check if user can create tasks (which implies managing board content generally for now, or check explicit board permission)
+            // Assuming 'createTask' policy covers adding groups for now as it's an owner/admin action
+             $board = \App\Models\Board::find($this->boardId);
+            \Illuminate\Support\Facades\Gate::authorize('createTask', $board);
+
             \App\Models\TaskGroup::create([
                 'board_id' => $this->boardId,
                 'title' => $this->title,
@@ -182,6 +189,8 @@ class AddModal extends Component
             }
         }
 
+        $board = \App\Models\Board::find($this->boardId);
+
         $data = [
             'type' => $this->type,
             'priority' => $this->priority,
@@ -189,6 +198,7 @@ class AddModal extends Component
         ];
 
         if ($this->isEditing && $this->entityId) {
+            \Illuminate\Support\Facades\Gate::authorize('updateTask', $board);
             $task = Task::find($this->entityId);
             $task->update($data);
 
@@ -200,6 +210,7 @@ class AddModal extends Component
                 "Updated task details"
             );
         } else {
+            \Illuminate\Support\Facades\Gate::authorize('createTask', $board);
             $task = Task::create(array_merge($data, [
                 'board_id' => $this->boardId,
                 'group_id' => $this->groupId,
@@ -237,8 +248,14 @@ class AddModal extends Component
     {
         if ($this->entityId) {
             if ($this->mode === 'group') {
-                \App\Models\TaskGroup::find($this->entityId)->delete();
+                $group = \App\Models\TaskGroup::find($this->entityId);
+                // Check direct permission on the group model if policy exists, or refer to board update/delete rights
+                // Using 'update' as proxy for managing group structure, or if there's a delete policy
+                \Illuminate\Support\Facades\Gate::authorize('update', $group); 
+                $group->delete();
             } else {
+                $board = \App\Models\Board::find($this->boardId);
+                \Illuminate\Support\Facades\Gate::authorize('deleteTask', $board);
                 $task = Task::find($this->entityId);
                 ActivityLog::log(
                     $this->boardId,

@@ -51,16 +51,18 @@
                             </div>
                             <!-- Progress: Active / Total -->
                             <div class="group-progress" style="display: flex; align-items: center; gap: 12px; font-size: 0.8rem; color: #8b949e;">
-                                <span>{{ $tasks->where('status', 'published')->count() }}/{{ $tasks->count() }} Done</span>
-                                
-                                @if($tasks->where('status', 'published')->count() === $tasks->count() && $group && $group->status !== 'published')
-                                    <button wire:click="markGroupComplete({{ $group->id }})" 
-                                            class="mark-complete-btn"
-                                            style="background: rgba(63, 185, 80, 0.1); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.4); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s;"
-                                            onmouseover="this.style.background='rgba(63, 185, 80, 0.2)'"
-                                            onmouseout="this.style.background='rgba(63, 185, 80, 0.1)'">
-                                        Mark Done
-                                    </button>
+                                @if($group)
+                                    <span>{{ $group->published_tasks_count }}/{{ $group->tasks_count }} Done</span>
+                                    
+                                    @if($group->published_tasks_count === $group->tasks_count && $group->status !== 'published')
+                                        <button wire:click="markGroupComplete({{ $group->id }})" 
+                                                class="mark-complete-btn"
+                                                style="background: rgba(63, 185, 80, 0.1); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.4); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s;"
+                                                onmouseover="this.style.background='rgba(63, 185, 80, 0.2)'"
+                                                onmouseout="this.style.background='rgba(63, 185, 80, 0.1)'">
+                                            Mark Done
+                                        </button>
+                                    @endif
                                 @endif
                             </div>
                         </div>
