@@ -36,9 +36,11 @@
                                 <!-- Group Title -->
                                 <div class="group-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
                                     <h3 style="margin: 0; font-size: 1rem; color: #f0f6fc; font-weight: 600;">{{ $group->title }}</h3>
+                                    @can('update', $group)
                                     <button class="btn-icon" style="color: #8b949e;" wire:click="$dispatch('open-group-modal', { groupId: {{ $group->id }} })">
                                         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                     </button>
+                                    @endcan
                                 </div>
 
                                 <!-- Tasks List (Types) -->
