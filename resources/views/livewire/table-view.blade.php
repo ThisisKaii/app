@@ -10,6 +10,7 @@
                 Filter
             </button>
 
+            @if($canEdit)
             <button class="add-task-btn" wire:click="$dispatch('open-group-modal')" 
                     style="background-color: #238636; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; display: flex; align-items: center; gap: 0.5rem; font-weight: 500; cursor: pointer; transition: background-color 0.2s;">
                 <svg class="stat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -17,6 +18,7 @@
                 </svg>
                 New Task
             </button>
+            @endif
             @livewire('board-members', ['boardId' => $boardId])
             <span class="stat-badge">
                 <svg class="stat-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">

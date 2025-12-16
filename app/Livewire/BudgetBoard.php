@@ -103,6 +103,11 @@ class BudgetBoard extends Component
 
     public function saveBudget()
     {
+        if (!Gate::allows('update', $this->board)) {
+            session()->flash('error', 'You are not authorized to update the budget.');
+            return;
+        }
+
         // Sanitize input: remove anything that isn't a digit or dot
         $sanitized = preg_replace('/[^0-9.]/', '', $this->totalBudget);
         $this->totalBudget = floatval($sanitized);

@@ -643,6 +643,18 @@
             }
         });
 
+        // Initialize Sidebar state based on screen size
+        function initSidebar() {
+            if (window.innerWidth < 1024) { // Matching JS breakpoint with CSS logic if needed, usually 768px or 1024px for tablet
+                sidebar.classList.add('collapsed');
+                sidebarToggle.classList.remove('sidebar-open');
+                mainContent.classList.add('expanded');
+            }
+        }
+
+        // Call on load
+        initSidebar();
+
         // Close modal with Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && userModal.classList.contains('active')) {

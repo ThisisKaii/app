@@ -84,80 +84,158 @@ This application is a Project Management & Budgeting System built with Laravel. 
 **Class**: `App\Livewire\BudgetBoard`
 **View**: `resources/views/livewire/budget-board.blade.php`
 **Purpose**: Manages the Kanban-style view for Budget Boards.
-**Key Methods**:
-- `mount($boardId)`: Initializes the component with the specific board.
-- `loadBudget()`: Fetches or creates the budget record associated with the board.
-- `openCategoryModal($categoryId)`: Opens the modal to add or edit a budget category.
-- `saveCategory()`: Validates and saves a budget category (handles both create and update).
-- `openExpenseModal($categoryId)`: Opens the modal to add an expense to a specific category.
-- `saveExpense()`: Validates and saves an expense record.
-- `deleteCategory()` / `deleteExpense()`: Handles deletion logic with permission checks.
+**Custom Methods**:
+- `loadBudget()`: Fetches or creates the budget record.
+- `loadCategories()`: Loads categories with expenses.
+- `openBudgetModal()`: Opens the modal to edit total budget.
+- `saveBudget()`: Validates and saves the total budget.
+- `closeBudgetModal()`: Closes the budget modal.
+- `openCategoryModal($categoryId, $status)`: Opens category add/edit modal.
+- `saveCategory()`: Saves a budget category.
+- `confirmDeleteCategory($categoryId)`: Sets ID for category deletion.
+- `deleteCategory()`: Deletes the confirmed category.
+- `closeDeleteCategoryModal()`: Closes the delete confirmation.
+- `closeCategoryModal()`: Closes the category modal.
+- `resetCategoryForm()`: Resets category input fields.
+- `openExpenseModal($categoryId, $expenseId)`: Opens expense add/edit modal.
+- `saveExpense()`: Saves an expense record.
+- `confirmDeleteExpense($expenseId)`: Sets ID for expense deletion.
+- `deleteExpense()`: Deletes the confirmed expense.
+- `closeDeleteExpenseModal()`: Closes the expense delete confirmation.
+- `closeExpenseModal()`: Closes the expense modal.
+- `resetExpenseForm()`: Resets expense input fields.
 
 ### BudgetTableView
 **Class**: `App\Livewire\BudgetTableView`
 **View**: `resources/views/livewire/budget-table-view.blade.php`
-**Purpose**: Manages the table view for Budget Boards, including pagination.
-**Key Methods**:
-- `getCategories()`: Returns paginated list of budget categories (10 per page).
-- `paginationView()`: Returns the custom 'livewire.pagination-dark' view.
-- `toggleFilters()`: Toggles the visibility of the filter bar.
-- `saveCategory()`: Handles the creating/editing of categories from the table view.
+**Purpose**: Manages the table view for Budget Boards.
+**Custom Methods**:
+- `loadBudget()`: Fetches budget data.
+- `getCategories()`: Returns paginated categories.
+- `paginationView()`: Returns custom pagination view.
+- `toggleFilters()`: Toggles filter visibility.
+- `clearFilters()`: Resets all filters.
+- `openCategoryModal($categoryId)`: Opens category modal.
+- `saveCategory()`: Saves category.
+- `confirmDeleteCategory($categoryId)`: Prepares category deletion.
+- `deleteCategory()`: Performs category deletion.
+- `closeDeleteCategoryModal()`: Closes delete modal.
+- `closeCategoryModal()`: Closes category modal.
+- `resetCategoryForm()`: Resets category inputs.
+- `openExpenseModal($categoryId, $expenseId)`: Opens expense modal.
+- `saveExpense()`: Saves expense.
+- `confirmDeleteExpense($expenseId)`: Prepares expense deletion.
+- `deleteExpense()`: Performs expense deletion.
+- `closeDeleteExpenseModal()`: Closes expense delete modal.
+- `closeExpenseModal()`: Closes expense modal.
+- `resetExpenseForm()`: Resets expense inputs.
 
 ### TableView
 **Class**: `App\Livewire\TableView`
 **View**: `resources/views/livewire/table-view.blade.php`
-**Purpose**: Manages the table view for standard Task Boards (Grouped by Task Group).
-**Key Methods**:
-- `getGroups()`: Returns paginated list of task groups (10 per page), with nested tasks.
-- `toggleGroup($groupId)`: Expands/collapses a task group in the table.
-- `openTaskModal($taskId)`: Opens the modal to edit a specific task.
-- `toggleTaskCompletion($taskId)`: Marks a task as complete/incomplete.
-- `takeTask($taskId)`: Allows a member to assign a task to themselves.
+**Purpose**: Manages the table view for standard Task Boards.
+**Custom Methods**:
+- `getGroups()`: Returns paginated task groups.
+- `toggleGroup($groupId)`: Toggles group expansion state.
+- `getUsers()`: Returns list of users for assignment.
+- `paginationView()`: Returns custom pagination view.
+- `toggleFilters()`: Toggles filter visibility.
+- `clearFilters()`: Resets filters.
+- `openTaskModal($taskId)`: Opens task edit modal.
+- `toggleTaskCompletion($taskId)`: Toggles published status.
+- `saveTask()`: Saves task details.
+- `syncTags($task)`: Syncs tags for a task.
+- `showDeleteConfirmation($taskId)`: Prepares task deletion.
+- `performDelete()`: Deletes the confirmed task.
+- `cancelDelete()`: Cancels deletion logic.
+- `closeDeleteModal()`: Closes delete modal.
+- `closeModal()`: Closes task modal.
+- `resetForm()`: Resets task inputs.
+- `getCanEditProperty()`: Computed property for edit permissions.
+- `takeTask($taskId)`: Assigns tax to current user.
 
 ### Dashboard
 **Class**: `App\Livewire\Dashboard`
 **View**: `resources/views/livewire/dashboard.blade.php`
 **Purpose**: Displays analytics and statistics.
-**Key Methods**:
-- `loadDashboardData()`: Aggregates data for charts and counters.
-- `setDateRange($range)`: Updates the time filter (week, month, quarter, all).
-- `loadBusinessDashboard()`: Calculates budget vs. actuals, utilization rates, and expense breakdowns.
+**Custom Methods**:
+- `setDateRange($range)`: Updates time filter.
+- `loadDashboardData()`: Orchestra method to load all data.
+- `loadNormalDashboard()`: Loads stats for standard boards.
+- `loadBusinessDashboard()`: Loads stats for budget boards.
+- `toggleAllTransactions()`: Toggles visibility of transaction list.
 
 ### AddModal
 **Class**: `App\Livewire\AddModal`
 **View**: `resources/views/livewire/add-modal.blade.php`
-**Purpose**: A unified modal for creating new Task Groups or Tasks.
-**Key Methods**:
-- `openGroupModal()`: Sets mode to 'group' and opens the modal.
-- `openTaskModal()`: Sets mode to 'task' and opens the modal.
-- `save()`: Dispatches to `saveGroup()` or `saveTask()` based on mode.
-
-### BudgetCategoryModal
-**Class**: `App\Livewire\BudgetCategoryModal`
-**View**: `resources/views/livewire/budget-category-modal.blade.php`
-**Purpose**: Handles the detailed view and editing of a specific Budget Category and its expenses.
-**Key Methods**:
-- `loadCategories()`: Refreshes category data.
-- `saveCategory()`: Updates category details (Title, Status, Estimated Amount).
-- `openExpenseModal()`: Prepares the nested modal for adding an expense.
+**Purpose**: Unified modal for creating new Groups or Tasks.
+**Custom Methods**:
+- `getListeners()`: Dynamic listeners configuration.
+- `getUsersProperty()`: Computed property for users list.
+- `getCanAssignProperty()`: Computed property for assignment permission.
+- `openGroupModal($status, $groupId)`: Opens modal in Group mode.
+- `openTaskModal($taskId, $groupId)`: Opens modal in Task mode.
+- `loadGroup($groupId)`: Loads group data for editing.
+- `loadTask($taskId)`: Loads task data for editing.
+- `save()`: Dispatches to saveGroup or saveTask.
+- `saveGroup()`: Persists group data.
+- `saveTask()`: Persists task data.
+- `askDelete()`: Initiates delete workflow.
+- `cancelDelete()`: Cancels delete workflow.
+- `delete()`: Deletes the current record (Group or Task).
+- `closeModal()`: Closes the modal.
+- `resetForm()`: Resets all inputs.
 
 ### EditModal
 **Class**: `App\Livewire\EditModal`
 **View**: `resources/views/livewire/edit-modal.blade.php`
 **Purpose**: Handles editing of existing tasks.
-**Key Methods**:
-- `loadTasks()`: Refreshes the task list.
-- `openModal($taskId)`: Loads task data into the form.
-- `saveTask()`: Updates the task and syncs tags.
+**Custom Methods**:
+- `loadTasks()`: Refreshes task list for the board.
+- `openModal($taskId)`: Opens modal and loads task data.
+- `saveTask()`: Updates task details and tags.
+- `closeModal()`: Closes the modal.
+- `resetForm()`: Resets inputs.
 
 ### MembersList
 **Class**: `App\Livewire\MembersList`
 **View**: `resources/views/livewire/members-list.blade.php`
-**Purpose**: Manages board members and invitations.
-**Key Methods**:
-- `addMember()`: Invites a new user to the board.
-- `updateRole($userId, $newRole)`: Changes a member's role (Owner, Admin, Member).
-- `removeMember()`: Removes a user from the board.
+**Purpose**: Manages board members.
+**Custom Methods**:
+- `loadBoard()`: Refreshes board and member data.
+- `setCurrentUserRole()`: Determines current user's role.
+- `toggleFilters()`: Toggles filter UI.
+- `clearFilters()`: Resets filters.
+- `openAddModal()`: Opens invite modal.
+- `closeAddModal()`: Closes invite modal.
+- `addMember()`: Invites a user to the board.
+- `askDelete($userId)`: Confirm member removal.
+- `removeMember()`: Removes confirmed member.
+- `cancelDelete()`: Cancels removal.
+- `updateRole($userId, $newRole)`: changes member permissions.
+- `canManageMembers()`: Permission check helper.
+
+### BudgetCategoryModal
+**Class**: `App\Livewire\BudgetCategoryModal`
+**View**: `resources/views/livewire/budget-category-modal.blade.php`
+**Purpose**: Manages detailed category view.
+**Custom Methods**:
+- `getListeners()`: Dynamic listeners.
+- `loadCategories()`: Refreshes categories.
+- `openCategoryModal($categoryId)`: Opens category edit modal.
+- `saveCategory()`: Saves category details.
+- `confirmDeleteCategory($categoryId)`: Prepares delete.
+- `deleteCategory()`: Deletes category.
+- `closeDeleteCategoryModal()`: Closes delete modal.
+- `closeCategoryModal()`: Closes edit modal.
+- `resetCategoryForm()`: Resets inputs.
+- `openExpenseModal($categoryId, $expenseId)`: Opens expense modal.
+- `saveExpense()`: Saves expense.
+- `confirmDeleteExpense($expenseId)`: Prepares expense delete.
+- `deleteExpense()`: Deletes expense.
+- `closeDeleteExpenseModal()`: Closes expense delete modal.
+- `closeExpenseModal()`: Closes expense modal.
+- `resetExpenseForm()`: Resets expense inputs.
 
 9. LOGGING SYSTEM
 -----------------
@@ -182,3 +260,17 @@ Authorization is handled via Laravel Policies and standard Gates.
     - `moveStatus`: Members can move their own tasks.
 - **TaskGroupPolicy**: Controls high-level task grouping.
     - `update`/`delete`: Restricted to Owner/Admin to prevent members from disrupting the board structure.
+
+11. ENUMS
+---------
+### TaskStatus
+**Namespace**: `App\Enums\TaskStatus`
+**Purpose**: Defines the possible states of a task and provides helper methods for UI consistency.
+**Cases**: `TODO` ('to_do'), `IN_PROGRESS` ('in_progress'), `IN_REVIEW` ('in_review'), `PUBLISHED` ('published').
+**Methods**:
+- `label()`: Returns the human-readable string (e.g., "To Do", "Completed").
+- `color()`: Returns the hex color code for the status (e.g., "#3fb950").
+- `bgColor()`: Returns the rgba background color for badges.
+- `isActive()`: Boolean check, returns true if status is not PUBLISHED.
+- `activeStatuses()`: Static method returning an array of all non-completed statuses.
+- `options()`: Static method returning an array of ['value', 'label'] pairs for dropdowns.

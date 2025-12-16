@@ -8,36 +8,11 @@ use Illuminate\Support\Facades\Auth;
 
 class Individual extends Component
 {
-    public $myTasks;
     public $boardId;
 
     public function mount($boardId)
     {
         $this->boardId = $boardId;
-        $this->loadTasks();
-    }
-
-    public function loadTasks()
-    {
-        // Use new multi-assignee relationship (task_user pivot table)
-        $this->myTasks = Task::where('board_id', $this->boardId)
-            ->where(function($query) {
-                // Check new multi-assignee relationship
-                $query->whereHas('users', function($q) {
-                    $q->where('user_id', Auth::id());
-                })
-                // Fallback to old assignee_id field
-                ->orWhere('assignee_id', Auth::id());
-            })
-            ->with(['tags', 'group']) // Eager load tags and parent group
-            // Sort by Priority (High -> Medium -> Low -> None) then Due Date
-            ->orderByRaw("CASE 
-                WHEN priority = 'high' THEN 1 
-                WHEN priority = 'medium' THEN 2 
-                WHEN priority = 'low' THEN 3 
-                ELSE 4 END")
-            ->orderBy('due_date') // Sooner due dates first
-            ->get();
     }
 
     public function toggleComplete($taskId)
@@ -72,8 +47,6 @@ class Individual extends Component
                     $group->save();
                 }
             }
-            
-            $this->loadTasks();
         }
     }
 
@@ -82,16 +55,39 @@ class Individual extends Component
         $group = \App\Models\TaskGroup::find($groupId);
         // Use Policy if strict, or basic owner/assignee check (similar to tasks)
         if ($group) {
-             // Logic: Allow if user has ANY task in this group?
-             // Or rely on Board permissions. Let's assume if they can see it in "My Workspace", they can move it if it's assigned.
-             // Using TaskGroupPolicy::update check would be best but simple check here:
              $group->status = 'published';
              $group->save();
-             $this->loadTasks();
         }
     }
+
     public function render()
     {
-        return view('livewire.individual');
+        // Use new multi-assignee relationship (task_user pivot table)
+        $myTasks = Task::where('board_id', $this->boardId)
+            ->where(function($query) {
+                // Check new multi-assignee relationship
+                $query->whereHas('users', function($q) {
+                    $q->where('user_id', Auth::id());
+                })
+                // Fallback to old assignee_id field
+                ->orWhere('assignee_id', Auth::id());
+            })
+            ->with(['tags', 'group' => function ($query) {
+                $query->withCount(['tasks', 'tasks as published_tasks_count' => function ($q) {
+                    $q->where('status', 'published');
+                }]);
+            }]) // Eager load tags and parent group with counts
+            // Sort by Priority (High -> Medium -> Low -> None) then Due Date
+            ->orderByRaw("CASE 
+                WHEN priority = 'high' THEN 1 
+                WHEN priority = 'medium' THEN 2 
+                WHEN priority = 'low' THEN 3 
+                ELSE 4 END")
+            ->orderBy('due_date') // Sooner due dates first
+            ->get();
+
+        return view('livewire.individual', [
+            'myTasks' => $myTasks
+        ]);
     }
 }
