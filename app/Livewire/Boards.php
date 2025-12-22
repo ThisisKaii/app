@@ -7,6 +7,10 @@ use App\Models\Board;
 use App\Models\Task;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Kanban board component for Normal boards displaying task groups and tasks.
+ * Handles drag-and-drop ordering and self-assignment functionality.
+ */
 class Boards extends Component
 {
     public $groups;
@@ -15,7 +19,9 @@ class Boards extends Component
 
     protected $listeners = ['refreshBoard' => 'loadGroups', 'takeTask' => 'takeTask'];
 
-    // Check if current user can edit (is owner/admin)
+    /**
+     * Check if current user has Owner or Admin role.
+     */
     public function getCanEditProperty()
     {
         $member = $this->board->members()->where('user_id', Auth::id())->first();
@@ -66,11 +72,9 @@ class Boards extends Component
     {
         $group = \App\Models\TaskGroup::find($groupId);
         if ($group) {
-            // Enforce permissions: Only Owners/Admins or Assigned Members can move cards
             try {
                 \Illuminate\Support\Facades\Gate::authorize('update', $group);
             } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
-                // If unauthorized, just return (Livewire will handle error, or we can dispatch notify)
                 $this->dispatch('error', 'You do not have permission to move this card.');
                 return;
             }
@@ -79,10 +83,8 @@ class Boards extends Component
             $group->order = $newOrder;
             $group->save();
             
-            // Reorder other groups in the new status
             $this->reorderGroups($newStatus);
-            
-            $this->loadGroups(); // Refresh
+            $this->loadGroups();
         }
     }
 
@@ -99,7 +101,9 @@ class Boards extends Component
         }
     }
 
-    // Allow members to take (assign to themselves) a task
+    /**
+     * Toggle task assignment for the current user (self-assign/unassign).
+     */
     public function takeTask($taskId)
     {
         $task = Task::find($taskId);
@@ -107,12 +111,9 @@ class Boards extends Component
         
         $userId = Auth::id();
         
-        // Check if user is already assigned
         if ($task->users()->where('user_id', $userId)->exists()) {
-            // Already assigned - remove assignment (toggle off)
             $task->users()->detach($userId);
         } else {
-            // Not assigned - add assignment
             $task->users()->attach($userId);
         }
         

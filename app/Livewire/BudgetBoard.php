@@ -10,6 +10,10 @@ use App\Models\Expenses;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
+/**
+ * Kanban-style budget board component for Business boards.
+ * Manages budget categories, expenses, and provides drag-and-drop functionality.
+ */
 class BudgetBoard extends Component
 {
     public $board;
@@ -17,12 +21,10 @@ class BudgetBoard extends Component
     public $budget;
     public $categories = [];
 
-    // Budget Modal
     public $showBudgetModal = false;
     public $totalBudget = 0;
     public $formattedTotalBudget = '';
 
-    // Category Management
     public $showCategoryModal = false;
     public $categoryId = null;
     public $categoryTitle = '';
@@ -30,14 +32,12 @@ class BudgetBoard extends Component
     public $amountEstimated = '';
     public $categoryStatus = 'draft';
 
-    // Expense Management
     public $showExpenseModal = false;
     public $selectedCategoryId = null;
     public $expenseId = null;
     public $expenseAmount = '';
     public $expenseDescription = '';
 
-    // Delete Modals
     public $showDeleteCategoryModal = false;
     public $deleteCategoryId = null;
     public $showDeleteExpenseModal = false;
@@ -48,7 +48,7 @@ class BudgetBoard extends Component
         'category-updated' => 'loadCategories',
         'refresh-budget' => 'loadBudget',
         'refresh-categories' => 'loadCategories',
-        'open-category-modal' => 'openCategoryModal', // General listener
+        'open-category-modal' => 'openCategoryModal',
     ];
 
     public function mount($boardId)
@@ -56,7 +56,6 @@ class BudgetBoard extends Component
         $this->boardId = $boardId;
         $this->board = Board::findOrFail($boardId);
 
-        // Ensure this is a business board
         if ($this->board->list_type !== 'Business') {
             abort(403, 'This board is not a budget board');
         }
@@ -64,9 +63,11 @@ class BudgetBoard extends Component
         $this->loadBudget();
     }
 
+    /**
+     * Load or create the budget record for this board and refresh categories.
+     */
     public function loadBudget()
     {
-        // Load or create budget
         $this->budget = Budgets::firstOrCreate(
             ['board_id' => $this->boardId],
             ['total_budget' => 0]
@@ -75,22 +76,23 @@ class BudgetBoard extends Component
         $this->loadCategories();
     }
 
+    /**
+     * Load all categories with their expenses, ordered by position.
+     */
     public function loadCategories()
     {
-        // Load all categories for this budget, ordered by our implementation
         $this->categories = BudgetCategory::where('budget_id', $this->budget->id)
             ->with(['expenses'])
             ->orderBy('order')
             ->get();
     }
 
-    // ============================================
-    // Budget Management
-    // ============================================
+    /**
+     * Open the total budget editing modal (Owner/Admin only).
+     */
 
     public function openBudgetModal()
     {
-        // Check authorization
         if (!Gate::allows('update', $this->board)) {
             session()->flash('error', 'You are not authorized to update the budget.');
             return;
@@ -108,7 +110,6 @@ class BudgetBoard extends Component
             return;
         }
 
-        // Sanitize input: remove anything that isn't a digit or dot
         $sanitized = preg_replace('/[^0-9.]/', '', $this->totalBudget);
         $this->totalBudget = floatval($sanitized);
 
@@ -117,15 +118,7 @@ class BudgetBoard extends Component
         ]);
 
         try {
-            // Check if new budget covers existing allocations
-            $totalAllocated = $this->budget->getTotalAllocated();
             $totalSpent = $this->budget->getTotalSpent();
-
-            // Warn if budget is less than allocated (handled in UI), but allow save.
-            // Only block if less than spent? Or allow that too?
-            // User said "input lower than the allocated amount".
-            // I will keep the check for SPENT as that is logically impossible to have budget < spent (you're in debt).
-            // But allocated is just a plan.
 
             if ($this->totalBudget < $totalSpent) {
                  $this->addError('totalBudget', 'Budget cannot be less than spent amount ($' . number_format($totalSpent, 2) . ')');
@@ -152,19 +145,18 @@ class BudgetBoard extends Component
         $this->formattedTotalBudget = '';
         $this->resetValidation();
     }
-    // updatedTotalBudget removed to prevent live hook interference
 
-    // ============================================
-    // Category Management
-    // ============================================
-
+    /**
+     * Open category modal for creating or editing a budget category.
+     *
+     * @param int|array|null $categoryId Category ID or array payload from event
+     * @param string $status Initial status for new categories
+     */
     public function openCategoryModal($categoryId = null, $status = 'draft')
     {
-        // Handle array payload
         if (is_array($categoryId)) {
             $categoryId = $categoryId['categoryId'] ?? null;
         }
-        
         // Check authorization
         if (!Gate::allows('viewTasks', $this->board)) {
             session()->flash('error', 'You are not authorized to view categories.');
@@ -197,7 +189,6 @@ class BudgetBoard extends Component
             'categoryStatus' => 'required|in:draft,pending,approved,rejected,completed',
         ]);
 
-        // Check authorization
         $permission = $this->categoryId ? 'updateTask' : 'createTask';
         if (!Gate::allows($permission, $this->board)) {
             session()->flash('error', 'You are not authorized to save categories.');
@@ -228,7 +219,7 @@ class BudgetBoard extends Component
 
             session()->flash('success', 'Category saved successfully!');
             $this->closeCategoryModal();
-            $this->loadBudget(); // Reload everything
+            $this->loadBudget();
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to save category: ' . $e->getMessage());
         }
@@ -238,7 +229,6 @@ class BudgetBoard extends Component
     {
         $this->deleteCategoryId = $categoryId;
         $this->showDeleteCategoryModal = true;
-        // Close the edit modal if open
         $this->showCategoryModal = false;
     }
 
@@ -285,10 +275,12 @@ class BudgetBoard extends Component
         $this->resetValidation();
     }
 
-    // ============================================
-    // Expense Management
-    // ============================================
-
+    /**
+     * Open expense modal for creating or editing an expense within a category.
+     *
+     * @param int $categoryId The parent category ID
+     * @param int|null $expenseId Expense ID for editing, null for creating
+     */
     public function openExpenseModal($categoryId, $expenseId = null)
     {
         if (!Gate::allows('addExpense', $this->board)) {

@@ -8,8 +8,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Handles CRUD operations and status updates for tasks.
+ */
 class TaskController extends Controller
 {
+    /**
+     * Create a new task on the specified board.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -37,15 +46,15 @@ class TaskController extends Controller
         return redirect()->back()->with('success', 'Task created!');
     }
 
+    /**
+     * Update a task's status and order (for drag-and-drop functionality).
+     *
+     * @param Request $request
+     * @param int $taskId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateStatus(Request $request, $taskId)
     {
-        // Log the incoming request for debugging
-        Log::info('Task update request', [
-            'task_id' => $taskId,
-            'request_data' => $request->all()
-        ]);
-
-        // Find the task
         $task = Task::find($taskId);
 
         if (!$task) {
@@ -56,15 +65,13 @@ class TaskController extends Controller
             ], 404);
         }
 
-        // Check authorization
         try {
             Gate::authorize('viewTasks', $task->board);
         } catch (\Exception $e) {
-            Log::error('Authorization failed', [
+            Log::error('Authorization failed for task update', [
                 'task_id' => $taskId,
                 'user_id' => auth()->id(),
-                'board_id' => $task->board_id,
-                'error' => $e->getMessage()
+                'board_id' => $task->board_id
             ]);
             return response()->json([
                 'success' => false,
@@ -72,33 +79,22 @@ class TaskController extends Controller
             ], 403);
         }
 
-        // Validate the request
         try {
             $validated = $request->validate([
                 'status' => 'required|in:to_do,in_review,in_progress,published',
                 'new_order' => 'nullable|integer|min:0'
             ]);
         } catch (\Exception $e) {
-            Log::error('Validation failed', [
-                'task_id' => $taskId,
-                'error' => $e->getMessage()
-            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed: ' . $e->getMessage()
             ], 422);
         }
 
-        // Update the task
         try {
             $task->update([
                 'status' => $validated['status'],
                 'order' => $validated['new_order'] ?? $task->order,
-            ]);
-
-            Log::info('Task updated successfully', [
-                'task_id' => $taskId,
-                'new_status' => $validated['status']
             ]);
 
             return response()->json([
@@ -118,6 +114,13 @@ class TaskController extends Controller
         }
     }
 
+    /**
+     * Update task details (title, description, priority, etc.).
+     *
+     * @param Request $request
+     * @param Task $task
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function update(Request $request, Task $task)
     {
         Gate::authorize('viewTasks', $task->board);
@@ -138,6 +141,12 @@ class TaskController extends Controller
         return redirect()->back()->with('success', 'Task updated!');
     }
 
+    /**
+     * Delete a task from the board.
+     *
+     * @param Task $task
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy(Task $task)
     {
         Gate::authorize('viewTasks', $task->board);

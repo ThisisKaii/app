@@ -13,6 +13,10 @@ use Illuminate\Support\Facades\Log;
 
 use Livewire\WithPagination;
 
+/**
+ * Table view component for displaying tasks grouped by task groups with filtering and pagination.
+ * Supports task CRUD operations, status toggling, and task assignment.
+ */
 class TableView extends Component
 {
     use WithPagination;
@@ -20,21 +24,18 @@ class TableView extends Component
     public $boardId;
     public $board;
 
-    // Filter properties
     public $statusFilter = '';
     public $priorityFilter = '';
     public $assigneeFilter = '';
     public $searchFilter = '';
     public $showFilters = false;
 
-    // Modal properties
     public $showModal = false;
     public $showDeleteModal = false;
     public $isEditing = false;
     public $taskId = null;
     public $deleteTaskId = null;
 
-    // Form fields
     public $title = '';
     public $description = '';
     public $type = '';
@@ -76,7 +77,6 @@ class TableView extends Component
                 ->with(['tasks' => function($query) {
                     $query->orderBy('order')->with('users', 'tags');
                     
-                    // Apply filters to the displayed tasks
                     if ($this->priorityFilter) {
                         $query->where('priority', $this->priorityFilter);
                     }
@@ -176,7 +176,6 @@ class TableView extends Component
                 return;
             }
 
-            // Check authorization for viewing/editing
             if (!Gate::allows('viewTasks', $this->board)) {
                 session()->flash('error', 'You are not authorized to view this task.');
                 return;
@@ -227,7 +226,6 @@ class TableView extends Component
                 return; // Members can't toggle unassigned tasks
             }
 
-            // Toggle status like Individual view
             $previousStatus = $task->status;
             $newStatus = $previousStatus === 'published' ? 'in_progress' : 'published';
             
@@ -235,7 +233,6 @@ class TableView extends Component
             $task->completed_at = $newStatus === 'published' ? now() : null;
             $task->save();
 
-            // Handle parent group status - if not all tasks complete, move group to in_progress
             $group = $task->group;
             if ($group) {
                 $allTasksCompleted = $group->tasks()->where('status', '!=', 'published')->count() === 0;
@@ -252,18 +249,11 @@ class TableView extends Component
         }
     }
 
+    /**
+     * Validate and save task form data.
+     */
     public function saveTask()
     {
-        Log::info('saveTask called', [
-            'isEditing' => $this->isEditing,
-            'taskId' => $this->taskId,
-            'title' => $this->title,
-            'status' => $this->status,
-            'priority' => $this->priority,
-            'due_date' => $this->due_date
-        ]);
-
-        // Validate
         $this->validate([
             'title' => 'required|string|max:255',
             'status' => 'required|in:to_do,in_progress,in_review,published',
@@ -281,7 +271,6 @@ class TableView extends Component
             $this->url = $this->url ?: null;
 
             if ($this->isEditing) {
-                // Check authorization for updating
                 if (!Gate::allows('updateTask', $this->board)) {
                     session()->flash('error', 'You are not authorized to update this task.');
                     return;
@@ -294,20 +283,6 @@ class TableView extends Component
                     $this->closeModal();
                     return;
                 }
-
-                Log::info('Updating task', [
-                    'task_id' => $task->id,
-                    'data' => [
-                        'title' => $this->title,
-                        'description' => $this->description,
-                        'type' => $this->type,
-                        'priority' => $this->priority,
-                        'status' => $this->status,
-                        'due_date' => $this->due_date,
-                        'url' => $this->url,
-                        'assignee_id' => $this->assignee_id,
-                    ]
-                ]);
 
                 $task->update([
                     'title' => $this->title,
@@ -322,11 +297,8 @@ class TableView extends Component
 
                 $this->syncTags($task);
 
-
-                Log::info('Task updated successfully', ['task_id' => $task->id]);
                 session()->flash('success', 'Task updated successfully!');
             } else {
-                // Check authorization for creating
                 if (!Gate::allows('createTask', $this->board)) {
                     session()->flash('error', 'You are not authorized to create tasks.');
                     return;
@@ -352,12 +324,9 @@ class TableView extends Component
 
                 $this->syncTags($task);
 
-
-                Log::info('Task created successfully', ['task_id' => $task->id]);
                 session()->flash('success', 'Task created successfully!');
             }
 
-            // Close modal and reset
             $this->closeModal();
 
         } catch (\Exception $e) {
@@ -404,7 +373,6 @@ class TableView extends Component
     public function performDelete()
     {
         try {
-            // Check authorization
             if (!Gate::allows('deleteTask', $this->board)) {
                 session()->flash('error', 'You are not authorized to delete this task.');
                 return;
@@ -423,10 +391,8 @@ class TableView extends Component
 
             $task->delete();
 
-            Log::info('Task deleted successfully', ['task_id' => $this->deleteTaskId]);
             session()->flash('success', 'Task deleted successfully!');
 
-            // Close modal
             $this->closeDeleteModal();
 
         } catch (\Exception $e) {
@@ -469,7 +435,9 @@ class TableView extends Component
         $this->taskId = null;
     }
 
-    // Check if current user can edit (is owner/admin)
+    /**
+     * Check if current user has Owner or Admin role.
+     */
     public function getCanEditProperty()
     {
         $member = $this->board->members()->where('user_id', auth()->id())->first();
@@ -484,12 +452,9 @@ class TableView extends Component
         
         $userId = auth()->id();
         
-        // Check if user is already assigned
         if ($task->users()->where('user_id', $userId)->exists()) {
-            // Already assigned - remove assignment (toggle off)
             $task->users()->detach($userId);
         } else {
-            // Not assigned - add assignment
             $task->users()->attach($userId);
         }
         

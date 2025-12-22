@@ -7,6 +7,10 @@ use App\Models\Task;
 use App\Models\Board;
 use App\Models\Tag;
 
+/**
+ * Modal component for creating and editing tasks within a specific status column.
+ * Handles task form validation, tag syncing, and board member assignment.
+ */
 class EditModal extends Component
 {
     public $board, $status, $tasks = [];
@@ -16,7 +20,6 @@ class EditModal extends Component
 
     public $availableColors = ['#ef4444', '#f59e0b', '#eab308', '#22c55e', '#3b82f6', '#6366f1', '#a855f7', '#ec4899'];
 
-    // Listen for events from both this status and global task updates
     protected $listeners = [
         'open-modal-{status}' => 'openModal',
         'task-updated' => 'loadTasks',
@@ -30,6 +33,9 @@ class EditModal extends Component
         $this->loadTasks();
     }
 
+    /**
+     * Refresh the task list for this status column.
+     */
     public function loadTasks()
     {
         $this->tasks = Task::where('board_id', $this->board->id)
@@ -39,12 +45,16 @@ class EditModal extends Component
             ->get();
     }
 
+    /**
+     * Open the modal for creating or editing a task.
+     *
+     * @param int|null $taskId Pass null to create a new task
+     */
     public function openModal($taskId = null)
     {
         $this->resetForm();
 
         if ($taskId) {
-            // EDITING EXISTING TASK
             $task = Task::with('tags')->find($taskId);
             if (!$task)
                 return;
@@ -60,9 +70,8 @@ class EditModal extends Component
             $this->assignee_id = $task->assignee_id;
             $this->tagsInput = $task->tags->pluck('name')->implode(', ');
         } else {
-            // CREATING NEW TASK - Auto-assign to current user
             $this->taskStatus = $this->status;
-            $this->assignee_id = auth()->id(); // Automatically assign to creator
+            $this->assignee_id = auth()->id();
         }
 
         $this->showModal = true;
@@ -80,7 +89,7 @@ class EditModal extends Component
             'title' => $this->title,
             'description' => $this->description,
             'type' => $this->type,
-            'priority' => $this->priority ?: 'low', // Fallback just in case
+            'priority' => $this->priority ?: 'low',
             'status' => $this->taskStatus,
             'due_date' => $this->due_date,
             'url' => $this->url,
@@ -88,7 +97,6 @@ class EditModal extends Component
         ];
 
         if ($this->taskId) {
-            // UPDATING EXISTING TASK
             \Illuminate\Support\Facades\Gate::authorize('updateTask', $this->board);
             $task = Task::find($this->taskId);
             $task->update($data);
@@ -100,7 +108,6 @@ class EditModal extends Component
                 ->where('status', $this->taskStatus)
                 ->max('order') + 1 ?? 0;
 
-            // If no assignee was selected, default to the creator
             if (empty($data['assignee_id'])) {
                 $data['assignee_id'] = auth()->id();
             }
@@ -108,7 +115,6 @@ class EditModal extends Component
             $task = Task::create($data);
         }
 
-        // Handle tags
         if ($this->tagsInput) {
             $tagIds = [];
             foreach (array_filter(array_map('trim', explode(',', $this->tagsInput))) as $name) {
@@ -122,11 +128,9 @@ class EditModal extends Component
 
         $this->closeModal();
 
-        // Refresh all columns
         $this->dispatch('task-updated');
         $this->dispatch('refresh-tasks');
 
-        // Reinitialize drag and drop after DOM update
         $this->js('setTimeout(() => initDragAndDrop(), 100)');
     }
 
@@ -147,7 +151,7 @@ class EditModal extends Component
         $this->taskStatus = $this->status;
         $this->due_date = null;
         $this->url = '';
-        $this->assignee_id = null; // Will be set in openModal for new tasks
+        $this->assignee_id = null;
         $this->tagsInput = '';
         $this->resetValidation();
     }

@@ -8,20 +8,22 @@ use Livewire\Component;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Gate;
 
+/**
+ * Analytics dashboard component displaying statistics for both Normal and Business boards.
+ * For Normal boards: task metrics, completion rates, team activity, and trends.
+ * For Business boards: budget metrics, spending analysis, and expense tracking.
+ */
 class Dashboard extends Component
 {
     public $board;
     public $isBusinessBoard = false;
 
-    // Date range filter
     public $dateRange = 'all';
     public $startDate;
     public $endDate;
 
-    // Dashboard data
     public $dashboardData = [];
 
-    // Modal state
     public $showAllTransactions = false;
 
     public function mount(Board $board)

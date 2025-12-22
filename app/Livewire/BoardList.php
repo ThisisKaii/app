@@ -7,6 +7,10 @@ use App\Models\Board;
 use App\Models\BudgetCategory;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Displays the user's board list with filtering, search, rename, and delete functionality.
+ * Board cards show task/category counts and member avatars.
+ */
 class BoardList extends Component
 {
     public $filterType = 'all';
@@ -16,7 +20,6 @@ class BoardList extends Component
     public $deleteBoardId;
     public $deleteBoardTitle;
 
-    // Rename modal properties
     public $renameModalOpen = false;
     public $renameBoardId;
     public $renameBoardTitle;
@@ -24,7 +27,6 @@ class BoardList extends Component
 
     protected $listeners = ['board-added' => '$refresh'];
 
-    // Filter methods
     public function setFilter($type)
     {
         $this->filterType = $type;
@@ -35,12 +37,10 @@ class BoardList extends Component
         $this->searchQuery = '';
     }
 
-    // Delete methods
     public function confirmDelete($id)
     {
         $board = Board::findOrFail($id);
 
-        // Check if user is owner
         $userMember = $board->members()->where('user_id', auth()->id())->first();
         $userRole = $userMember ? $userMember->pivot->role : 'member';
 
@@ -63,7 +63,6 @@ class BoardList extends Component
     {
         $board = Board::findOrFail($this->deleteBoardId);
 
-        // Double-check ownership
         $userMember = $board->members()->where('user_id', auth()->id())->first();
         $userRole = $userMember ? $userMember->pivot->role : 'member';
 
@@ -82,12 +81,10 @@ class BoardList extends Component
         $this->dispatch('board-deleted');
     }
 
-    // Rename methods
     public function openRenameModal($id)
     {
         $board = Board::findOrFail($id);
 
-        // Check if user is owner or admin
         $userMember = $board->members()->where('user_id', auth()->id())->first();
         $userRole = $userMember ? $userMember->pivot->role : 'member';
 
@@ -115,7 +112,6 @@ class BoardList extends Component
 
         $board = Board::findOrFail($this->renameBoardId);
 
-        // Double-check permission
         $userMember = $board->members()->where('user_id', auth()->id())->first();
         $userRole = $userMember ? $userMember->pivot->role : 'member';
 
@@ -125,7 +121,6 @@ class BoardList extends Component
             return;
         }
 
-        // Check if title actually changed
         if ($board->title === $this->newBoardTitle) {
             $this->closeRenameModal();
             return;
@@ -138,7 +133,6 @@ class BoardList extends Component
         $this->closeRenameModal();
         session()->flash('success', 'Board renamed successfully.');
 
-        // Refresh the component
         $this->dispatch('board-renamed');
     }
 
@@ -163,10 +157,8 @@ class BoardList extends Component
 
         $boards = $query->get();
 
-        // Add budget category counts for business boards
         foreach ($boards as $board) {
             if ($board->list_type === 'Business') {
-                // Get count of budget categories for this board
                 $board->budget_categories_count = BudgetCategory::whereHas('budget', function ($q) use ($board) {
                     $q->where('board_id', $board->id);
                 })->count();

@@ -8,24 +8,24 @@ use App\Models\User;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Gate;
 
+/**
+ * Board member management component with role-based permissions.
+ * Allows Owner/Admin to invite, remove, and change roles of members.
+ */
 class MembersList extends Component
 {
     public $boardId;
     public $board;
-    // public $members = []; // Removed to fix hydration issue
     public $currentUserRole;
 
-    // Filters
     public $roleFilter = '';
     public $searchFilter = '';
     public $showFilters = false;
 
-    // Add member form
     public $showAddModal = false;
     public $email = '';
     public $role = 'member';
 
-    // Delete confirmation
     public $showDeleteConfirm = false;
     public $deletingMemberId = null;
 
@@ -48,15 +48,12 @@ class MembersList extends Component
             }
         ])->findOrFail($this->boardId);
 
-        // Set current user role
         $this->setCurrentUserRole();
     }
 
     protected function setCurrentUserRole()
     {
-        // Check if user is the board owner
         if ($this->board->user_id == auth()->id()) {
-            // Ensure owner pivot exists
             $existingPivot = $this->board->members()->where('user_id', auth()->id())->first();
 
             if (!$existingPivot) {
@@ -66,7 +63,6 @@ class MembersList extends Component
                     'updated_at' => now(),
                 ]);
             } elseif ($existingPivot->pivot->role !== 'owner') {
-                // Update to owner if not already
                 $this->board->members()->updateExistingPivot(auth()->id(), [
                     'role' => 'owner',
                     'updated_at' => now(),
@@ -77,7 +73,6 @@ class MembersList extends Component
             return;
         }
 
-        // Check if user is a member
         $currentMember = $this->board->members()
             ->where('user_id', auth()->id())
             ->first();
@@ -85,16 +80,12 @@ class MembersList extends Component
         if ($currentMember && isset($currentMember->pivot->role)) {
             $this->currentUserRole = $currentMember->pivot->role;
         } else {
-            // User is not a member and not the owner
             abort(403, 'You do not have access to this board.');
         }
     }
 
-    // applyFilters removed - logic moved to render
-
     public function updated($property)
     {
-        // Livewire automatically re-renders, so we don't need to manually call applyFilters
     }
 
     public function toggleFilters()

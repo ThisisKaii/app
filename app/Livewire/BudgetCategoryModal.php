@@ -10,6 +10,10 @@ use App\Models\Board;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Gate;
 
+/**
+ * Column-specific modal component for managing budget categories and their expenses.
+ * Handles CRUD operations with activity logging for each status column.
+ */
 class BudgetCategoryModal extends Component
 {
     public $budget;
@@ -17,7 +21,6 @@ class BudgetCategoryModal extends Component
     public $categories = [];
     public $board;
 
-    // Category Modal
     public $showCategoryModal = false;
     public $categoryId = null;
     public $categoryTitle = '';
@@ -25,14 +28,12 @@ class BudgetCategoryModal extends Component
     public $amountEstimated = '';
     public $categoryStatus = 'draft';
 
-    // Expense Modal
     public $showExpenseModal = false;
     public $selectedCategoryId = null;
     public $expenseId = null;
     public $expenseAmount = '';
     public $expenseDescription = '';
 
-    // Delete Modals
     public $showDeleteCategoryModal = false;
     public $deleteCategoryId = null;
     public $showDeleteExpenseModal = false;
@@ -64,18 +65,12 @@ class BudgetCategoryModal extends Component
             ->get();
     }
 
-    // ============================================
-    // Category Management
-    // ============================================
-
     public function openCategoryModal($categoryId = null)
     {
-        // Handle array payload (common in Livewire event dispatch)
         if (is_array($categoryId)) {
             $categoryId = $categoryId['categoryId'] ?? null;
         }
 
-        // Check authorization
         if (!Gate::allows('viewTasks', $this->board)) {
             session()->flash('error', 'You are not authorized to view categories.');
             return;
@@ -163,7 +158,6 @@ class BudgetCategoryModal extends Component
 
     public function deleteCategory()
     {
-        // Check authorization
         if (!Gate::allows('deleteTask', $this->board)) {
             session()->flash('error', 'You are not authorized to delete categories.');
             return;
@@ -214,13 +208,8 @@ class BudgetCategoryModal extends Component
         $this->resetValidation();
     }
 
-    // ============================================
-    // Expense Management
-    // ============================================
-
     public function openExpenseModal($categoryId, $expenseId = null)
     {
-        // Check authorization
         if (!Gate::allows('addExpense', $this->board)) {
             session()->flash('error', 'You are not authorized to manage expenses.');
             return;
@@ -295,7 +284,6 @@ class BudgetCategoryModal extends Component
 
     public function deleteExpense()
     {
-        // Check authorization
         if (!Gate::allows('addExpense', $this->board)) {
             session()->flash('error', 'You are not authorized to delete expenses.');
             return;
