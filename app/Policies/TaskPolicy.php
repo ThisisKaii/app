@@ -7,12 +7,23 @@ use App\Models\Task;
 use App\Models\Board;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
+/**
+ * Defines granular authorization rules for Task-level actions.
+ * 
+ * Access rules:
+ * - Owner/Admin: Full access to all tasks on the board
+ * - Member: Can only modify tasks they created or are assigned to
+ */
 class TaskPolicy
 {
     use HandlesAuthorization;
 
     /**
-     * Get user's role on a specific board
+     * Get the user's role on a specific board.
+     *
+     * @param User $user
+     * @param Board $board
+     * @return string|null Role name or null if not a member
      */
     protected function getUserRole(User $user, Board $board): ?string
     {
@@ -21,7 +32,11 @@ class TaskPolicy
     }
 
     /**
-     * Check if user is owner or admin on the board
+     * Check if user has elevated privileges (Owner or Admin).
+     *
+     * @param User $user
+     * @param Board $board
+     * @return bool
      */
     protected function isOwnerOrAdmin(User $user, Board $board): bool
     {
@@ -30,21 +45,26 @@ class TaskPolicy
     }
 
     /**
-     * Check if task is assigned to user (via task_user or assignee_id)
+     * Check if the task is assigned to the user via task_user pivot or legacy assignee_id.
+     *
+     * @param User $user
+     * @param Task $task
+     * @return bool
      */
     protected function isAssignedToUser(User $user, Task $task): bool
     {
-        // Check new multi-assignee relationship
         if ($task->users()->where('user_id', $user->id)->exists()) {
             return true;
         }
-        
-        // Fallback to old single assignee
         return $task->assignee_id === $user->id;
     }
 
     /**
-     * Check if user created the task
+     * Check if the user originally created the task.
+     *
+     * @param User $user
+     * @param Task $task
+     * @return bool
      */
     protected function isCreator(User $user, Task $task): bool
     {
@@ -52,34 +72,31 @@ class TaskPolicy
     }
 
     /**
-     * Determine if user can view any tasks on the board
+     * Any board member can view the task list.
      */
     public function viewAny(User $user, Board $board): bool
     {
-        // Any board member can view tasks
         return $this->getUserRole($user, $board) !== null;
     }
 
     /**
-     * Determine if user can view a specific task
+     * Any board member can view a specific task.
      */
     public function view(User $user, Task $task): bool
     {
-        // Any board member can view any task
         return $this->getUserRole($user, $task->board) !== null;
     }
 
     /**
-     * Determine if user can create tasks on the board
+     * Any board member can create new tasks.
      */
     public function create(User $user, Board $board): bool
     {
-        // Any board member can create tasks
         return $this->getUserRole($user, $board) !== null;
     }
 
     /**
-     * Determine if user can update a task
+     * Owner/Admin can edit any task; Members can only edit their own tasks.
      */
     public function update(User $user, Task $task): bool
     {
@@ -90,17 +107,15 @@ class TaskPolicy
             return false;
         }
 
-        // Owner and Admin can edit any task
         if (in_array($role, ['owner', 'admin'])) {
             return true;
         }
 
-        // Members can only edit their own tasks (assigned or created)
         return $this->isAssignedToUser($user, $task) || $this->isCreator($user, $task);
     }
 
     /**
-     * Determine if user can delete a task
+     * Owner/Admin can delete any task; Members can only delete their own tasks.
      */
     public function delete(User $user, Task $task): bool
     {
@@ -111,42 +126,37 @@ class TaskPolicy
             return false;
         }
 
-        // Owner and Admin can delete any task
         if (in_array($role, ['owner', 'admin'])) {
             return true;
         }
 
-        // Members can only delete their own tasks
         return $this->isAssignedToUser($user, $task) || $this->isCreator($user, $task);
     }
 
     /**
-     * Determine if user can assign tasks to others
+     * Only Owner and Admin can assign tasks to other users.
      */
     public function assign(User $user, Task $task): bool
     {
         $board = $task->board;
         $role = $this->getUserRole($user, $board);
-        
-        // Only Owner and Admin can assign to others
         return in_array($role, ['owner', 'admin']);
     }
 
     /**
-     * Determine if user can change task status (drag-drop)
+     * Users with update permission can also move tasks between columns.
      */
     public function moveStatus(User $user, Task $task): bool
     {
-        // Same rules as update - can only move your own tasks as Member
         return $this->update($user, $task);
     }
 
     /**
-     * Determine if user can manage checklist items
+     * Users with update permission can manage task checklists.
      */
     public function manageChecklist(User $user, Task $task): bool
     {
-        // Users can manage checklist on tasks assigned to them
         return $this->update($user, $task);
     }
 }
+

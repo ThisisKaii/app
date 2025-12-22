@@ -9,17 +9,21 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Handles API requests for budget category drag-and-drop status updates.
+ */
 class BudgetCategoryController extends Controller
 {
+    /**
+     * Update a budget category's status and/or order position.
+     * Used by the Kanban drag-and-drop functionality.
+     *
+     * @param Request $request
+     * @param int $categoryId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateStatus(Request $request, $categoryId)
     {
-        // Log the incoming request for debugging
-        Log::info('Budget category update request', [
-            'category_id' => $categoryId,
-            'request_data' => $request->all()
-        ]);
-
-        // Find the budget category
         $category = BudgetCategory::find($categoryId);
 
         if (!$category) {
@@ -30,7 +34,6 @@ class BudgetCategoryController extends Controller
             ], 404);
         }
 
-        // Get the budget and check authorization
         $budget = $category->budget;
         if (!$budget) {
             Log::error('Budget not found for category', ['category_id' => $categoryId]);
@@ -40,15 +43,13 @@ class BudgetCategoryController extends Controller
             ], 404);
         }
 
-        // Check authorization through the board
         try {
             Gate::authorize('updateTask', $budget->board);
         } catch (\Exception $e) {
-            Log::error('Authorization failed', [
+            Log::error('Authorization failed for budget category update', [
                 'category_id' => $categoryId,
                 'user_id' => auth()->id(),
-                'board_id' => $budget->board_id,
-                'error' => $e->getMessage()
+                'board_id' => $budget->board_id
             ]);
             return response()->json([
                 'success' => false,
@@ -56,24 +57,18 @@ class BudgetCategoryController extends Controller
             ], 403);
         }
 
-        // Validate the request
         try {
             $validated = $request->validate([
                 'status' => 'required|in:draft,pending,approved,rejected,completed',
                 'new_order' => 'nullable|integer|min:0'
             ]);
         } catch (\Exception $e) {
-            Log::error('Validation failed', [
-                'category_id' => $categoryId,
-                'error' => $e->getMessage()
-            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed: ' . $e->getMessage()
             ], 422);
         }
 
-        // Update the category
         try {
             $category->update([
                 'status' => $validated['status'],
@@ -87,12 +82,6 @@ class BudgetCategoryController extends Controller
                 'update_status',
                 "Changed status to " . ucfirst($validated['status'])
             );
-
-            Log::info('Budget category updated successfully', [
-                'category_id' => $categoryId,
-                'new_status' => $validated['status'],
-                'new_order' => $validated['new_order'] ?? $category->order
-            ]);
 
             return response()->json([
                 'success' => true,

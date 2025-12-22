@@ -4,8 +4,20 @@ namespace App\Traits;
 
 use App\Models\ActivityLog;
 
+/**
+ * Automatically logs model lifecycle events (created, updated, deleted) to the ActivityLog.
+ * 
+ * Models using this trait can customize log descriptions by implementing:
+ * - customCreatedDescription(): string
+ * - customUpdatedDescription(array $changes): string
+ * - customDeletedDescription(): string
+ * - getLoggableFields(): array (to limit which fields trigger update logs)
+ */
 trait Loggable
 {
+    /**
+     * Boot the trait and register model event listeners for activity logging.
+     */
     protected static function bootLoggable()
     {
         static::created(function ($model) {
@@ -35,7 +47,6 @@ trait Loggable
         });
 
         static::deleting(function ($model) {
-            // Use "deleting" event instead of "deleted" - runs BEFORE deletion
             if (!$model->shouldLogActivity())
                 return;
 
@@ -47,6 +58,13 @@ trait Loggable
         });
     }
 
+    /**
+     * Create an activity log entry for this model.
+     *
+     * @param string $action The action type (created, updated, deleted)
+     * @param string $description Human-readable description of the change
+     * @return ActivityLog|null The created log entry, or null if logging conditions aren't met
+     */
     public function createLog($action, $description)
     {
         $boardId = $this->getLogBoardId();
@@ -63,11 +81,21 @@ trait Loggable
         ]);
     }
 
+    /**
+     * Check if this model change should be logged (requires authenticated user and board context).
+     *
+     * @return bool
+     */
     protected function shouldLogActivity()
     {
         return auth()->check() && $this->getLogBoardId();
     }
 
+    /**
+     * Resolve the board_id for this model (direct property, self if Board, or via relationship).
+     *
+     * @return int|null
+     */
     protected function getLogBoardId()
     {
         if (isset($this->board_id))
@@ -79,6 +107,11 @@ trait Loggable
         return null;
     }
 
+    /**
+     * Get the changed attributes that should be logged, excluding timestamps and system fields.
+     *
+     * @return array Associative array of changed fields with 'old' and 'new' values
+     */
     protected function getLogChanges()
     {
         $loggable = method_exists($this, 'getLoggableFields')
@@ -97,11 +130,22 @@ trait Loggable
         return $changes;
     }
 
+    /**
+     * Get a human-readable identifier for this model (title, name, or id).
+     *
+     * @return string
+     */
     protected function getLogIdentifier()
     {
         return $this->title ?? $this->name ?? $this->id ?? 'Unknown';
     }
 
+    /**
+     * Build a descriptive update message listing all changed fields.
+     *
+     * @param array $changes The changed fields from getLogChanges()
+     * @return string Formatted description like "Updated Task 'Title': Status: 'old' → 'new'"
+     */
     protected function buildUpdateDescription($changes)
     {
         $items = [];
@@ -114,6 +158,13 @@ trait Loggable
         return "Updated " . class_basename($this) . " '" . $this->getLogIdentifier() . "': " . implode(', ', $items);
     }
 
+    /**
+     * Format a value for display in log descriptions, handling nulls, booleans, dates, and long strings.
+     *
+     * @param string $attr The attribute name (for potential type-specific formatting)
+     * @param mixed $val The value to format
+     * @return string Human-readable representation
+     */
     protected function formatLogValue($attr, $val)
     {
         if (is_null($val))
