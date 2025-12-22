@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Gate;
 
 use Livewire\WithPagination;
 
+/**
+ * Table view component for Budget boards with filtering and pagination.
+ * Manages budget categories and expenses in a tabular format.
+ */
 class BudgetTableView extends Component
 {
     use WithPagination;
@@ -19,12 +23,10 @@ class BudgetTableView extends Component
     public $board;
     public $budget;
 
-    // Filter properties
     public $statusFilter = '';
     public $searchFilter = '';
     public $showFilters = false;
 
-    // Category Modal
     public $showCategoryModal = false;
     public $categoryId = null;
     public $categoryTitle = '';
@@ -32,14 +34,12 @@ class BudgetTableView extends Component
     public $amountEstimated = '';
     public $categoryStatus = 'draft';
 
-    // Expense Modal
     public $showExpenseModal = false;
     public $selectedCategoryId = null;
     public $expenseId = null;
     public $expenseAmount = '';
     public $expenseDescription = '';
 
-    // Delete Modals
     public $showDeleteCategoryModal = false;
     public $deleteCategoryId = null;
     public $showDeleteExpenseModal = false;
@@ -103,10 +103,8 @@ class BudgetTableView extends Component
         $this->searchFilter = '';
     }
 
-    // Category Management
     public function openCategoryModal($categoryId = null)
     {
-        // Fix: Use board permissions instead of task permissions
         if (!Gate::allows('viewTasks', $this->board)) {
             session()->flash('error', 'You are not authorized to view categories.');
             return;
@@ -182,7 +180,6 @@ class BudgetTableView extends Component
 
     public function deleteCategory()
     {
-        // Fix: Use board permissions instead of task permissions
         if (!Gate::allows('updateTask', $this->board)) {
             session()->flash('error', 'You are not authorized to delete categories.');
             return;
@@ -223,10 +220,8 @@ class BudgetTableView extends Component
         $this->resetValidation();
     }
 
-    // Expense Management
     public function openExpenseModal($categoryId, $expenseId = null)
     {
-        // Fix: Use board permissions instead of task permissions
         if (!Gate::allows('addExpense', $this->board)) {
             session()->flash('error', 'You are not authorized to manage expenses.');
             return;
@@ -285,7 +280,6 @@ class BudgetTableView extends Component
 
     public function deleteExpense()
     {
-        // Fix: Use board permissions instead of task permissions
         if (!Gate::allows('addExpense', $this->board)) {
             session()->flash('error', 'You are not authorized to delete expenses.');
             return;

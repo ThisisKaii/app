@@ -7,29 +7,29 @@ use Livewire\Attributes\On;
 use App\Models\Task;
 use App\Models\ActivityLog;
 
+/**
+ * Unified modal component for creating and editing groups (task columns) and tasks.
+ * Supports both creation and editing modes with delete confirmation workflow.
+ */
 class AddModal extends Component
 {
-    // Modal state
     public $show = false;
     public $showDeleteConfirm = false;
 
-    // Component props
     public $boardId;
-    public $status; // Column status (for new group)
+    public $status;
 
-    // Mode: 'group' or 'task'
     public $mode = 'task';
     public $groupId = null;
-    public $entityId = null; // ID of the group or task being edited
+    public $entityId = null;
     public $isEditing = false;
 
-    // Form fields
-    public $title = ''; // For Group Title
-    public $type = ''; // For Task Type
+    public $title = '';
+    public $type = '';
     public $priority = 'low';
     public $due_date = '';
     public $url = '';
-    public $assignee_ids = []; // Array for multiple assignees
+    public $assignee_ids = [];
 
     public function mount($boardId, $status = 'to_do')
     {
@@ -132,7 +132,6 @@ class AddModal extends Component
     {
         $this->validate(['title' => 'required|string|max:255']);
 
-        // Check for duplicate title in this board (application level uniqueness)
         $exists = \App\Models\TaskGroup::where('board_id', $this->boardId)
             ->where('title', $this->title)
             ->when($this->isEditing && $this->entityId, function($q) {
@@ -152,8 +151,6 @@ class AddModal extends Component
                 'title' => $this->title
             ]);
         } else {
-            // Check if user can create tasks (which implies managing board content generally for now, or check explicit board permission)
-            // Assuming 'createTask' policy covers adding groups for now as it's an owner/admin action
              $board = \App\Models\Board::find($this->boardId);
             \Illuminate\Support\Facades\Gate::authorize('createTask', $board);
 
@@ -177,10 +174,8 @@ class AddModal extends Component
             'assignee_ids' => 'array'
         ]);
         
-        // If type is empty, maybe require it? User said "type are like sub category".
-        if (empty($this->type)) $this->type = 'Task'; 
+        if (empty($this->type)) $this->type = 'Task';
         
-        // Determine status from Group
         $groupStatus = 'to_do';
         if ($this->groupId) {
             $group = \App\Models\TaskGroup::find($this->groupId);
@@ -215,9 +210,8 @@ class AddModal extends Component
                 'board_id' => $this->boardId,
                 'group_id' => $this->groupId,
                 'user_id' => auth()->id(),
-                'status' => $groupStatus, // Use group status instead of hardcoded 'to_do'
-                // Default props
-                'title' => $this->type, // Legacy title field
+                'status' => $groupStatus,
+                'title' => $this->type,
                 'order' => Task::where('group_id', $this->groupId)->max('order') + 1
             ]));
 
@@ -230,7 +224,6 @@ class AddModal extends Component
             );
         }
 
-        // Sync users
         $task->users()->sync($this->assignee_ids);
     }
 
@@ -249,8 +242,6 @@ class AddModal extends Component
         if ($this->entityId) {
             if ($this->mode === 'group') {
                 $group = \App\Models\TaskGroup::find($this->entityId);
-                // Check direct permission on the group model if policy exists, or refer to board update/delete rights
-                // Using 'update' as proxy for managing group structure, or if there's a delete policy
                 \Illuminate\Support\Facades\Gate::authorize('update', $group); 
                 $group->delete();
             } else {

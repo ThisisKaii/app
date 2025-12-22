@@ -6,104 +6,102 @@ use App\Models\User;
 use App\Models\Board;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
+/**
+ * Defines authorization rules for Board-level actions.
+ * 
+ * Role hierarchy: Owner > Admin > Member
+ * - Owner: Full control including deletion and member management
+ * - Admin: Can manage tasks, budgets, and invite/remove members
+ * - Member: View-only access with ability to add expenses
+ */
 class BoardPolicy
 {
     use HandlesAuthorization;
 
     /**
-     * Determine if the user can view the board.
+     * Any board member can view the board.
      */
     public function view(User $user, Board $board)
     {
-        // Check if user is a member of the board
         return $board->members()->where('user_id', $user->id)->exists();
     }
 
     /**
-     * Determine if the user can view tasks on the board.
+     * Any board member can view tasks on the board.
      */
     public function viewTasks(User $user, Board $board)
     {
-        // Any board member can view tasks
         return $board->members()->where('user_id', $user->id)->exists();
     }
 
     /**
-     * Determine if the user can update the board.
+     * Only Owner and Admin can modify board settings.
      */
     public function update(User $user, Board $board)
     {
-        // Check if user is owner or admin
         $member = $board->members()->where('user_id', $user->id)->first();
         return $member && in_array($member->pivot->role, ['owner', 'admin']);
     }
 
     /**
-     * Determine if the user can delete the board.
+     * Only the Owner can permanently delete the board.
      */
     public function delete(User $user, Board $board)
     {
-        // Only owner can delete
         $member = $board->members()->where('user_id', $user->id)->first();
         return $member && $member->pivot->role === 'owner';
     }
 
     /**
-     * Determine if the user can add members to the board.
+     * Owner and Admin can invite new members to the board.
      */
     public function addMember(User $user, Board $board)
     {
-        // Owner and admin can add members
         $member = $board->members()->where('user_id', $user->id)->first();
         return $member && in_array($member->pivot->role, ['owner', 'admin']);
     }
 
     /**
-     * Determine if the user can remove members from the board.
+     * Owner and Admin can remove members from the board.
      */
     public function removeMember(User $user, Board $board)
     {
-        // Owner and admin can remove members
         $member = $board->members()->where('user_id', $user->id)->first();
         return $member && in_array($member->pivot->role, ['owner', 'admin']);
     }
 
     /**
-     * Determine if the user can create tasks on the board.
+     * Owner and Admin can create budget categories (used for Business boards).
      */
     public function createTask(User $user, Board $board)
     {
-        // Only owner and admin can create tasks
         $member = $board->members()->where('user_id', $user->id)->first();
         return $member && in_array($member->pivot->role, ['owner', 'admin']);
     }
 
     /**
-     * Determine if the user can update tasks on the board.
+     * Owner and Admin can modify budget category structure.
      */
     public function updateTask(User $user, Board $board)
     {
-        // Only owner and admin can update tasks
         $member = $board->members()->where('user_id', $user->id)->first();
         return $member && in_array($member->pivot->role, ['owner', 'admin']);
     }
 
     /**
-     * Determine if the user can delete tasks on the board.
+     * Owner and Admin can delete budget categories.
      */
     public function deleteTask(User $user, Board $board)
     {
-        // Only owner and admin can delete tasks
         $member = $board->members()->where('user_id', $user->id)->first();
         return $member && in_array($member->pivot->role, ['owner', 'admin']);
     }
 
     /**
-     * Determine if the user can add expenses to the board.
+     * All members can add expenses for collaborative budget tracking.
      */
     public function addExpense(User $user, Board $board)
     {
-        // All members can add expenses
         return $board->members()->where('user_id', $user->id)->exists();
     }
 }
